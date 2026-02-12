@@ -122,7 +122,7 @@
         {% for movie in now_showing %}
         <div class="carousel-item {% if forloop.first %}active{% endif %} hero-slide">
             <!-- Background Blur -->
-            <div class="hero-bg" style="background-image: url('{% if movie.poster %}{{ movie.poster.url }}{% else %}https://via.placeholder.com/1920x1080{% endif %}');"></div>
+            <div class="hero-bg" style="background-image: url('{% if movie.banner %}{{ movie.banner.url }}{% elif movie.poster %}{{ movie.poster.url }}{% else %}https://via.placeholder.com/1920x1080{% endif %}');"></div>
             <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-50"></div>
             
             <div class="container h-100 position-relative z-index-1">
@@ -140,9 +140,11 @@
                             <a href="{% url 'movie_detail' movie.id %}" class="btn btn-primary btn-lg shadow-warning px-5 rounded-pill">
                                 <i class="fas fa-ticket-alt me-2"></i> Book Tickets
                             </a>
-                            <button class="btn btn-outline-light btn-lg rounded-pill px-4 backdrop-blur">
+                            {% if movie.get_trailer_id %}
+                            <button class="btn btn-outline-light btn-lg rounded-pill px-4 backdrop-blur" data-bs-toggle="modal" data-bs-target="#trailerModal{{ movie.id }}">
                                 <i class="fas fa-play me-2"></i> Trailer
                             </button>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col-lg-6 d-none d-lg-flex justify-content-center animate__animated animate__fadeInRight">
@@ -152,6 +154,22 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Trailer Modal -->
+            {% if movie.get_trailer_id %}
+            <div class="modal fade" id="trailerModal{{ movie.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content bg-transparent border-0">
+                        <div class="modal-body p-0 position-relative">
+                            <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3 z-index-10" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <div class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-lg">
+                                <iframe src="https://www.youtube.com/embed/{{ movie.get_trailer_id }}?autoplay=0&rel=0" title="{{ movie.title }} Trailer" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
         {% empty %}
         <!-- Fallback if no movies -->

@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import TemplateView
 from . import views
 
 urlpatterns = [
@@ -31,4 +32,13 @@ urlpatterns = [
     path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('dashboard/approve-cancellation/<int:request_id>/', views.approve_cancellation, name='approve_cancellation'),
     path('dashboard/reject-cancellation/<int:request_id>/', views.reject_cancellation, name='reject_cancellation'),
+    
+    # Footer Pages
+    path('cinemas/', views.cinemas_list, name='cinemas_list'),
+    path('coming-soon/', views.coming_soon, name='coming_soon'),
+    path('offers/', TemplateView.as_view(template_name='booking/offers.html'), name='offers'),
+    path('help/', TemplateView.as_view(template_name='booking/help.html'), name='help'),
+    path('terms/', TemplateView.as_view(template_name='booking/terms.html'), name='terms'),
+    path('privacy/', TemplateView.as_view(template_name='booking/privacy.html'), name='privacy'),
+    path('faq/', TemplateView.as_view(template_name='booking/faq.html'), name='faq'),
 ]

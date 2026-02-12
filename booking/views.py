@@ -22,24 +22,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Initialize Providers (Sandbox Credentials)
-# In production, use os.getenv()
+import os
+
 esewa_provider = EsewaProvider(
-    secret_key="8gBm/:&EnhH.1/q", 
-    product_code="EPAYTEST", 
-    sandbox=True
+    secret_key=os.getenv('ESEWA_SECRET_KEY', "8gBm/:&EnhH.1/q"), 
+    product_code=os.getenv('ESEWA_PRODUCT_CODE', "EPAYTEST"), 
+    sandbox=os.getenv('ESEWA_SANDBOX', 'True') == 'True'
 )
 
-# Placeholder for Khalti - In production use generic sandbox or user provided
+# Placeholder for Khalti
 khalti_provider = KhaltiProvider(
-    secret_key="test_secret_key_from_dashboard", # User needs to provide this
-    website_url="http://localhost:8000",
-    sandbox=True
+    secret_key=os.getenv('KHALTI_SECRET_KEY', "test_secret_key_from_dashboard"),
+    website_url=os.getenv('KHALTI_WEBSITE_URL', "http://localhost:8000"),
+    sandbox=os.getenv('KHALTI_SANDBOX', 'True') == 'True'
 )
 
 fonepay_provider = FonepayProvider(
-    merchant_code="NBQM",
-    secret_key="a7e3512f5032480a83137793cb2021dc",
-    sandbox=True
+    merchant_code=os.getenv('FONEPAY_MERCHANT_CODE', "NBQM"),
+    secret_key=os.getenv('FONEPAY_SECRET_KEY', "a7e3512f5032480a83137793cb2021dc"),
+    sandbox=os.getenv('FONEPAY_SANDBOX', 'True') == 'True'
 )
 
 PROVIDERS = {
@@ -620,3 +621,16 @@ def reject_cancellation(request, request_id):
             messages.warning(request, f"Cancellation rejected for Booking {cancellation.booking.booking_reference}")
     
     return redirect('admin_dashboard')
+
+# ============================================
+# FOOTER PAGES
+# ============================================
+
+def cinemas_list(request):
+    cinemas = Cinema.objects.all().prefetch_related('screens')
+    return render(request, 'booking/cinemas.html', {'cinemas': cinemas})
+
+def coming_soon(request):
+    movies = Movie.objects.filter(is_now_showing=False, release_date__gt=timezone.now()).order_by('release_date')
+    return render(request, 'booking/coming_soon.html', {'movies': movies})
+

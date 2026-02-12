@@ -11,6 +11,14 @@ class Cinema(models.Model):
     def __str__(self):
         return f"{self.name} - {self.location}"
 
+class MovieImage(models.Model):
+    movie = models.ForeignKey('Movie', on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='movie_gallery/')
+    caption = models.CharField(max_length=200, blank=True)
+    
+    def __str__(self):
+        return f"Image for {self.movie.title}"
+
 class Movie(models.Model):
     RATING_CHOICES = [
         ('U', 'Universal'),
@@ -27,10 +35,23 @@ class Movie(models.Model):
     release_date = models.DateField()
     poster = models.ImageField(upload_to='movie_posters/', blank=True, null=True)
     trailer_url = models.URLField(blank=True, null=True)
+    banner = models.ImageField(upload_to='movie_banners/', blank=True, null=True, help_text="Wide image for hero section/backdrop (1920x600 recommended)")
     is_now_showing = models.BooleanField(default=True)
     
     def __str__(self):
         return self.title
+
+    def get_trailer_id(self):
+        """Extracts YouTube ID from URL"""
+        if not self.trailer_url:
+            return None
+        import re
+        # RegEx to find YouTube ID
+        regex = r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})'
+        match = re.search(regex, self.trailer_url)
+        if match:
+            return match.group(1)
+        return None
 
 class Screen(models.Model):
     cinema = models.ForeignKey(Cinema, on_delete=models.CASCADE, related_name='screens')

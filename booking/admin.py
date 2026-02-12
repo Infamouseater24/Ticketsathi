@@ -1,17 +1,17 @@
 from django.contrib import admin
 from django.utils import timezone
-from .models import Cinema, Movie, Screen, Showtime, Seat, Booking, Payment, CancellationRequest, SeatBooking
+from .models import Cinema, Movie, Screen, Showtime, Seat, Booking, Payment, CancellationRequest, SeatBooking, MovieImage
 
-@admin.register(Cinema)
-class CinemaAdmin(admin.ModelAdmin):
-    list_display = ['name', 'location', 'phone']
-    search_fields = ['name', 'location']
+class MovieImageInline(admin.TabularInline):
+    model = MovieImage
+    extra = 3
 
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
     list_display = ['title_display', 'genre', 'language', 'rating', 'release_date', 'is_now_showing']
     list_filter = ['is_now_showing', 'rating', 'genre', 'language']
     search_fields = ['title', 'description']
+    inlines = [MovieImageInline]
     list_editable = ['is_now_showing']
     
     def title_display(self, obj):

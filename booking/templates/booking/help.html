@@ -1,0 +1,40 @@
+{% extends 'booking/base.html' %}
+
+{% block title %}Help Center - Ticket Sathi{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 800px;">
+    <h2 class="fw-bold mb-4 text-white">How can we help you?</h2>
+    
+    <div class="input-group mb-5">
+        <span class="input-group-text bg-dark border-secondary text-muted"><i class="fas fa-search"></i></span>
+        <input type="text" class="form-control bg-dark border-secondary text-white py-3" placeholder="Search for answers...">
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <h4 class="text-white mb-3">Booking & Tickets</h4>
+            <ul class="list-unstyled">
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">How to book a ticket?</a></li>
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">Can I cancel my booking?</a></li>
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">Where can I find my ticket?</a></li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h4 class="text-white mb-3">Payments</h4>
+            <ul class="list-unstyled">
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">Accepted payment methods</a></li>
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">Refund policy</a></li>
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">Payment failed issues</a></li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h4 class="text-white mb-3">Account</h4>
+            <ul class="list-unstyled">
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">Reset password</a></li>
+                <li class="mb-2"><a href="#" class="text-secondary text-decoration-none hover-primary">Update profile details</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

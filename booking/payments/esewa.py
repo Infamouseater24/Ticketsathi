@@ -22,21 +22,47 @@ class EsewaProvider(PaymentProvider):
     def initiate_payment(self, request: PaymentRequest) -> PaymentResponse:
         transaction_uuid = f"{request.order_id}-{uuid.uuid4().hex[:6]}"
         
-        # eSewa requires: total_amount, transaction_uuid, product_code
-        # Signature string: "total_amount,transaction_uuid,product_code"
-        signature_string = f"{request.amount},{transaction_uuid},{self.product_code}"
+        # Override secret key for EPAYTEST
+        if self.product_code == "EPAYTEST":
+            self.secret_key = "8gBm/:&EnhH.1/q"
+            
+        # Format amount (remove .0)
+        amount_str = str(request.amount)
+        if amount_str.endswith('.0'):
+            amount_str = amount_str[:-2]
+            
+        # Official V2 Signature Format:
+        # Message = "total_amount={video_id},transaction_uuid={uuid},product_code={code}"
+        # BUT wait, the documentation example says "total_amount=100,transaction_uuid=11-201-13,product_code=EPAYTEST" 
+        # is WRONG. The documentation actually says:
+        # "The signature is generated using HMAC-SHA256 algorithm on a string composed of 
+        # total_amount, transaction_uuid, and product_code separated by commas."
+        # i.e., "total_amount,transaction_uuid,product_code" -> "100,11-201-13,EPAYTEST"
+        
+        # Let's revert to the comma-separated string which is standard for eSewa V2.
+        # AND ensure we are NOT sending extra fields that might be confusing it.
+        
+        signature_string = f"total_amount={amount_str},transaction_uuid={transaction_uuid},product_code={self.product_code}"
+        
+        # WAIT! The error "Invalid payload signature" often means the server calculates a different signature 
+        # than what we sent. This happens if the STRING we start with is different.
+        # eSewa V2 documentation is notoriously inconsistent.
+        # Let's try the key-value pair format which is required by some endpoints.
+        
         signature = self._generate_signature(signature_string)
+        
+        print(f"DEBUG ESEWA: String='{signature_string}' Signature='{signature}' Secret='{self.secret_key}'")
 
         form_fields = {
-            "amount": str(request.amount),
+            "amount": amount_str,
             "tax_amount": "0",
-            "total_amount": str(request.amount),
+            "total_amount": amount_str,
             "transaction_uuid": transaction_uuid,
             "product_code": self.product_code,
             "product_service_charge": "0",
             "product_delivery_charge": "0",
             "success_url": request.callback_url,
-            "failure_url": request.callback_url, # Handle failure on same callback for simplicity
+            "failure_url": request.callback_url,
             "signed_field_names": "total_amount,transaction_uuid,product_code",
             "signature": signature,
         }

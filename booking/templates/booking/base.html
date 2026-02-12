@@ -42,64 +42,58 @@
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
-                <i class="fas fa-film"></i> Ticket Sathi
+                <i class="fas fa-ticket-alt brand-icon"></i> <span class="brand-text">Ticket Sathi</span>
             </a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto ms-4">
+                <ul class="navbar-nav ms-4 me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'movies' %}">Movies</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'movies' %}active{% endif %}" href="{% url 'movies' %}">Movies</a>
                     </li>
                 </ul>
                 
                 <!-- Search Form -->
-                <form class="d-flex me-4 position-relative" method="GET" action="{% url 'movies' %}">
+                <form class="d-flex me-4 search-form position-relative" method="GET" action="{% url 'movies' %}">
                     <div class="input-group">
-                        <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border-color);">
+                        <span class="input-group-text bg-transparent">
                             <i class="fas fa-search"></i>
                         </span>
-                        <input class="form-control border-start-0 ps-0" type="search" name="search" placeholder="Search movies..." 
-                               value="{{ request.GET.search }}" style="border-color: var(--border-color);">
+                        <input class="form-control" type="search" name="search" placeholder="Search movies..." 
+                               value="{{ request.GET.search }}">
                     </div>
                 </form>
                 
-                <ul class="navbar-nav align-items-center">
+                <div class="d-flex align-items-center gap-3">
                     {% if user.is_authenticated %}
-                        <li class="nav-item me-3">
-                            <a class="nav-link" href="{% url 'my_bookings' %}">
-                                <i class="fas fa-ticket-alt"></i> My Bookings
+                        <div class="nav-item dropdown user-dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="fas fa-user text-primary" style="font-size: 0.9rem;"></i>
+                                </div>
+                                <span class="fw-medium small">{{ user.username }}</span>
                             </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle btn btn-outline-light border-0" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle fa-lg"></i> {{ user.username }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <ul class="dropdown-menu dropdown-menu-end animated fadeIn">
                                 {% if user.is_staff %}
-                                <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}"><i class="fas fa-tachometer-alt me-2"></i> Admin Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}"><i class="fas fa-tachometer-alt me-2 w-20"></i> Dashboard</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 {% endif %}
-                                <li><a class="dropdown-item" href="{% url 'my_bookings' %}"><i class="fas fa-ticket-alt me-2"></i> My Bookings</a></li>
+                                <li><a class="dropdown-item" href="{% url 'my_bookings' %}"><i class="fas fa-ticket-alt me-2 w-20"></i> My Bookings</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2 w-20"></i> Logout</a></li>
                             </ul>
-                        </li>
+                        </div>
                     {% else %}
-                        <li class="nav-item me-2">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-primary" href="{% url 'signup' %}">Sign Up</a>
-                        </li>
+                        <a class="btn btn-outline-light btn-sm" href="{% url 'login' %}">Login</a>
+                        <a class="btn btn-primary btn-sm" href="{% url 'signup' %}">Sign Up</a>
                     {% endif %}
-                </ul>
+                </div>
             </div>
         </div>
     </nav>
@@ -109,7 +103,7 @@
         <div class="container" style="margin-top: 100px;">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show bg-dark border-secondary text-white" role="alert">
-                    {{ message }}
+                    <i class="fas fa-info-circle me-2"></i> {{ message }}
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
@@ -123,45 +117,58 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer mt-5 py-5">
+    <footer class="footer mt-5">
         <div class="container">
-            <div class="row gy-4">
-                <div class="col-md-4">
-                    <h5 class="mb-3 text-white"><i class="fas fa-film me-2"></i>Ticket Sathi</h5>
-                    <p class="text-secondary">Experience movies like never before. Premium booking service for the best cinemas in town.</p>
-                    <div class="d-flex gap-3 mt-3">
-                        <a href="#"><i class="fab fa-facebook fa-lg"></i></a>
-                        <a href="#"><i class="fab fa-twitter fa-lg"></i></a>
-                        <a href="#"><i class="fab fa-instagram fa-lg"></i></a>
+            <div class="row gy-5">
+                <div class="col-lg-4">
+                    <h5 class="mb-3 text-white d-flex align-items-center">
+                        <i class="fas fa-film text-primary me-2"></i> Ticket Sathi
+                    </h5>
+                    <p class="brand-desc">
+                        Experience cinema like never before. From the latest blockbusters to indie gems, we bring the magic of movies to you with premium comfort and seamless booking.
+                    </p>
+                    <div class="d-flex gap-3 mt-4">
+                        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
                     </div>
                 </div>
-                <div class="col-md-2 offset-md-1">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled d-grid gap-2">
-                        <li><a href="{% url 'home' %}" class="text-decoration-none">Home</a></li>
-                        <li><a href="{% url 'movies' %}" class="text-decoration-none">Movies</a></li>
-                        <li><a href="{% url 'my_bookings' %}" class="text-decoration-none">My Bookings</a></li>
+                <div class="col-lg-2 offset-lg-1 col-6">
+                    <h5>Discover</h5>
+                    <ul class="list-unstyled d-grid gap-3">
+                        <li><a href="{% url 'home' %}" class="footer-link">Now Showing</a></li>
+                        <li><a href="{% url 'coming_soon' %}" class="footer-link">Coming Soon</a></li>
+                        <li><a href="{% url 'cinemas_list' %}" class="footer-link">Cinemas</a></li>
+                        <li><a href="{% url 'offers' %}" class="footer-link">Offers</a></li>
                     </ul>
                 </div>
-                <div class="col-md-2">
+                <div class="col-lg-2 col-6">
                     <h5>Support</h5>
-                    <ul class="list-unstyled d-grid gap-2">
-                        <li><a href="#" class="text-decoration-none">Help Center</a></li>
-                        <li><a href="#" class="text-decoration-none">Terms of Service</a></li>
-                        <li><a href="#" class="text-decoration-none">Privacy Policy</a></li>
+                    <ul class="list-unstyled d-grid gap-3">
+                        <li><a href="{% url 'help' %}" class="footer-link">Help Center</a></li>
+                        <li><a href="{% url 'terms' %}" class="footer-link">Terms of Service</a></li>
+                        <li><a href="{% url 'privacy' %}" class="footer-link">Privacy Policy</a></li>
+                        <li><a href="{% url 'faq' %}" class="footer-link">FAQ</a></li>
                     </ul>
                 </div>
-                <div class="col-md-3">
-                    <h5>Contact</h5>
-                    <ul class="list-unstyled d-grid gap-2">
-                        <li class="text-secondary"><i class="fas fa-envelope me-2"></i> info@ticketsathi.com</li>
-                        <li class="text-secondary"><i class="fas fa-phone me-2"></i> +977 1-4444444</li>
-                    </ul>
+                <div class="col-lg-3">
+                    <h5>Newsletter</h5>
+                    <p class="text-muted small mb-3">Subscribe to get updates on new releases and special offers.</p>
+                    <div class="input-group search-form">
+                        <input type="email" class="form-control" placeholder="Your email">
+                        <button class="btn btn-primary px-3" type="button"><i class="fas fa-paper-plane"></i></button>
+                    </div>
                 </div>
             </div>
-            <hr class="my-4 border-secondary">
-            <div class="text-center text-secondary">
-                <p>&copy; 2025 Ticket Sathi. All rights reserved.</p>
+            <hr class="my-5 border-secondary bg-secondary bg-opacity-25">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <p class="mb-0 text-muted small">&copy; 2025 Ticket Sathi. All rights reserved.</p>
+                <div class="d-flex gap-4">
+                    <i class="fab fa-cc-visa text-muted fa-2x"></i>
+                    <i class="fab fa-cc-mastercard text-muted fa-2x"></i>
+                    <i class="fab fa-cc-paypal text-muted fa-2x"></i>
+                </div>
             </div>
         </div>
     </footer>

@@ -1,0 +1,51 @@
+{% extends 'booking/base.html' %}
+
+{% block title %}FAQ - Ticket Sathi{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 800px;">
+    <h2 class="fw-bold mb-5 text-white text-center">Frequently Asked Questions</h2>
+    
+    <div class="accordion accordion-flush" id="faqAccordion">
+        <!-- Item 1 -->
+        <div class="accordion-item bg-transparent border-bottom border-secondary">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-transparent text-white fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne">
+                    How do I book a ticket?
+                </button>
+            </h2>
+            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary">
+                    Simply select a movie, choose your preferred cinema and showtime, select your seats, and proceed to payment. You will receive a QR code ticket upon confirmation.
+                </div>
+            </div>
+        </div>
+        <!-- Item 2 -->
+        <div class="accordion-item bg-transparent border-bottom border-secondary">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-transparent text-white fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo">
+                    Can I cancel my tickets?
+                </button>
+            </h2>
+            <div id="flush-collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary">
+                    Yes, you can request a cancellation from your "My Bookings" page up to 2 hours before the showtime. Refunds are processed to your original payment method.
+                </div>
+            </div>
+        </div>
+        <!-- Item 3 -->
+        <div class="accordion-item bg-transparent border-bottom border-secondary">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-transparent text-white fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree">
+                    Do I need to print my ticket?
+                </button>
+            </h2>
+            <div id="flush-collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary">
+                    No, you can simply show the QR code on your mobile device at the cinema entrance.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -166,7 +166,7 @@
         </a>
     </div>
 
-    <form method="post" class="payment-container" id="paymentForm">
+    <form method="post" action="{% url 'process_payment' booking.id %}" class="payment-container" id="paymentForm">
         {% csrf_token %}
         
         <!-- Left Column: Payment Methods -->
