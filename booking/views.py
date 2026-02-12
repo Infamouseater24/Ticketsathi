@@ -25,22 +25,22 @@ logger = logging.getLogger(__name__)
 import os
 
 esewa_provider = EsewaProvider(
-    secret_key=os.getenv('ESEWA_SECRET_KEY', "8gBm/:&EnhH.1/q"), 
-    product_code=os.getenv('ESEWA_PRODUCT_CODE', "EPAYTEST"), 
-    sandbox=os.getenv('ESEWA_SANDBOX', 'True') == 'True'
+    secret_key=os.environ['ESEWA_SECRET_KEY'], 
+    product_code=os.environ.get('ESEWA_PRODUCT_CODE', "EPAYTEST"), 
+    sandbox=os.environ.get('ESEWA_SANDBOX', 'True') == 'True'
 )
 
 # Placeholder for Khalti
 khalti_provider = KhaltiProvider(
-    secret_key=os.getenv('KHALTI_SECRET_KEY', "test_secret_key_from_dashboard"),
-    website_url=os.getenv('KHALTI_WEBSITE_URL', "http://localhost:8000"),
-    sandbox=os.getenv('KHALTI_SANDBOX', 'True') == 'True'
+    secret_key=os.environ['KHALTI_SECRET_KEY'],
+    website_url=os.environ.get('KHALTI_WEBSITE_URL', "http://localhost:8000"),
+    sandbox=os.environ.get('KHALTI_SANDBOX', 'True') == 'True'
 )
 
 fonepay_provider = FonepayProvider(
-    merchant_code=os.getenv('FONEPAY_MERCHANT_CODE', "NBQM"),
-    secret_key=os.getenv('FONEPAY_SECRET_KEY', "a7e3512f5032480a83137793cb2021dc"),
-    sandbox=os.getenv('FONEPAY_SANDBOX', 'True') == 'True'
+    merchant_code=os.environ.get('FONEPAY_MERCHANT_CODE', "NBQM"),
+    secret_key=os.environ['FONEPAY_SECRET_KEY'],
+    sandbox=os.environ.get('FONEPAY_SANDBOX', 'True') == 'True'
 )
 
 PROVIDERS = {
@@ -152,7 +152,7 @@ def movie_detail(request, movie_id):
     showtimes = Showtime.objects.filter(
         movie=movie,
         start_time__date=selected_date
-    ).select_related('screen__cinema')
+    ).select_related('screen__cinema').order_by('screen__cinema__name', 'screen__cinema__location', 'start_time')
     
     if selected_cinema:
         showtimes = showtimes.filter(screen__cinema_id=selected_cinema)
@@ -559,68 +559,7 @@ def cancel_booking(request, booking_id):
         return redirect('my_bookings')
     
     return redirect('request_cancellation', booking_id=booking.id)
-from django.db.models import Sum, Count
-from django.contrib.auth.decorators import user_passes_test
-
-def is_admin(user):
-    return user.is_authenticated and user.is_staff
-
-@user_passes_test(is_admin)
-def admin_dashboard(request):
-    # Stats
-    total_revenue = Booking.objects.filter(status='Confirmed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    total_tickets = SeatBooking.objects.filter(booking__status='Confirmed').count()
-    active_movies = Movie.objects.filter(is_now_showing=True).count()
-    users_count = User.objects.count()
-    
-    # Recent Bookings
-    recent_bookings = Booking.objects.order_by('-booking_date')[:5]
-    
-    # Validation Requests (Cancellation)
-    pending_cancellations = CancellationRequest.objects.filter(status='Pending').order_by('-request_date')
-    
-    context = {
-        'total_revenue': total_revenue,
-        'total_tickets': total_tickets,
-        'active_movies': active_movies,
-        'users_count': users_count,
-        'recent_bookings': recent_bookings,
-        'pending_cancellations': pending_cancellations,
-    }
-    return render(request, 'booking/admin_dashboard.html', context)
-
-@user_passes_test(is_admin)
-def approve_cancellation(request, request_id):
-    cancellation = get_object_or_404(CancellationRequest, id=request_id)
-    if cancellation.status == 'Pending':
-        cancellation.status = 'Approved'
-        cancellation.admin_response = "Approved by Admin"
-        cancellation.save()
-        
-        # Update booking status
-        booking = cancellation.booking
-        booking.status = 'Cancelled'
-        booking.save()
-        
-        # Release seats
-        for seat in booking.seats.all():
-            SeatBooking.objects.filter(booking=booking, seat=seat).delete()
-            
-        messages.success(request, f"Cancellation approved for Booking {booking.booking_reference}")
-    
-    return redirect('admin_dashboard')
-
-@user_passes_test(is_admin)
-def reject_cancellation(request, request_id):
-    if request.method == 'POST':
-        cancellation = get_object_or_404(CancellationRequest, id=request_id)
-        if cancellation.status == 'Pending':
-            cancellation.status = 'Rejected'
-            cancellation.admin_response = request.POST.get('reason', 'Rejected by Admin')
-            cancellation.save()
-            messages.warning(request, f"Cancellation rejected for Booking {cancellation.booking.booking_reference}")
-    
-    return redirect('admin_dashboard')
+    return redirect('request_cancellation', booking_id=booking.id)
 
 # ============================================
 # FOOTER PAGES

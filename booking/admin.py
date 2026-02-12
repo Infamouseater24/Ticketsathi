@@ -18,6 +18,12 @@ class MovieAdmin(admin.ModelAdmin):
         return f"{obj.title} ({obj.release_date.year})"
     title_display.short_description = 'Movie'
 
+@admin.register(Cinema)
+class CinemaAdmin(admin.ModelAdmin):
+    list_display = ['name', 'location', 'phone']
+    search_fields = ['name', 'location']
+
+
 @admin.register(Screen)
 class ScreenAdmin(admin.ModelAdmin):
     list_display = ['name', 'cinema', 'total_seats']

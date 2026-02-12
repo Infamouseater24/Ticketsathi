@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trailer Debug</title>
+    <style>
+        body { background: #222; color: #fff; font-family: sans-serif; padding: 20px; }
+        .test-case { margin-bottom: 30px; border: 1px solid #444; padding: 10px; border-radius: 8px; }
+        h3 { margin-top: 0; color: #ffd700; }
+    </style>
+</head>
+<body>
+    <h1>YouTube Embed Diagnostic</h1>
+    <p>Please check which of the following videos play correctly.</p>
+
+    <div class="test-case">
+        <h3>1. Standard Embed (No Origin)</h3>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/{{ video_id }}?autoplay=0&rel=0" frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <div class="test-case">
+        <h3>2. Origin: 127.0.0.1:8000</h3>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/{{ video_id }}?autoplay=0&rel=0&origin=http://127.0.0.1:8000" frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <div class="test-case">
+        <h3>3. Origin: localhost:8000</h3>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/{{ video_id }}?autoplay=0&rel=0&origin=http://localhost:8000" frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <div class="test-case">
+        <h3>4. No-Cookie Domain</h3>
+        <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/{{ video_id }}?autoplay=0&rel=0" frameborder="0" allowfullscreen></iframe>
+    </div>
+</body>
+</html>

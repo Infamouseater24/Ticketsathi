@@ -46,8 +46,8 @@ class Movie(models.Model):
         if not self.trailer_url:
             return None
         import re
-        # RegEx to find YouTube ID
-        regex = r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})'
+        # Robust RegEx to find YouTube ID
+        regex = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
         match = re.search(regex, self.trailer_url)
         if match:
             return match.group(1)
