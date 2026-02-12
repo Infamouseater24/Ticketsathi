@@ -141,93 +141,104 @@
 {% endblock %}
 
 {% block content %}
-<div class="auth-container animate__animated animate__fadeIn">
-    <div class="auth-box">
-        <div class="auth-tabs">
-            <a href="{% url 'login' %}" class="auth-tab">SIGN IN</a>
-            <div class="auth-tab active">SIGN UP</div>
-        </div>
-        
-        <form method="post">
-            {% csrf_token %}
+<div class="container-fluid p-0 overflow-hidden">
+    <div class="row g-0" style="min-height: 100vh;">
+        <!-- Left Side: Visual -->
+        <div class="col-lg-6 d-none d-lg-flex position-relative align-items-center justify-content-center bg-dark">
+            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('https://images.unsplash.com/photo-1517604931442-71053e6e7466?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; opacity: 0.6;"></div>
+            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(26,26,26,0.9) 0%, rgba(26,26,26,0.4) 100%);"></div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label>First Name*</label>
-                    {{ form.first_name }}
-                    {% if form.first_name.errors %}
-                        <ul class="errorlist">
-                            {% for error in form.first_name.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
+            <div class="position-relative z-index-1 text-center text-white px-5 animate__animated animate__fadeInLeft">
+                <i class="fas fa-ticket-alt fa-4x text-warning mb-4"></i>
+                <h1 class="display-4 fw-bold mb-3" style="font-family: var(--font-heading);">Join the Club</h1>
+                <p class="lead text-light opacity-75">Unlock exclusive premieres, early access, and rewards.</p>
+            </div>
+        </div>
+
+        <!-- Right Side: Form -->
+        <div class="col-lg-6 d-flex align-items-center justify-content-center bg-deep position-relative py-5">
+            <div class="auth-box w-100 mx-auto px-4 px-md-5" style="max-width: 600px; background: transparent; box-shadow: none; border: none;">
+                <div class="text-center mb-5 d-lg-none">
+                    <i class="fas fa-film fa-3x text-warning"></i>
+                </div>
+
+                <div class="auth-header mb-4">
+                    <h2 class="fw-bold mb-2">Create Account</h2>
+                    <p class="text-muted">Already have an account? <a href="{% url 'login' %}" class="text-decoration-none text-warning">Sign In</a></p>
                 </div>
                 
-                <div class="form-group">
-                    <label>Last Name*</label>
-                    {{ form.last_name }}
-                    {% if form.last_name.errors %}
-                        <ul class="errorlist">
-                            {% for error in form.last_name.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.first_name }}
+                                <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                            </div>
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.last_name }}
+                                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                            </div>
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        {{ form.username }}
+                        <label for="{{ form.username.id_for_label }}">Username</label>
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        {{ form.email }}
+                        <label for="{{ form.email.id_for_label }}">Email Address</label>
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.password1 }}
+                                <label for="{{ form.password1.id_for_label }}">Password</label>
+                            </div>
+                            {% if form.password1.errors %}
+                                <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text text-muted small">{{ form.password1.help_text }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.password2 }}
+                                <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                            </div>
+                            {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 shadow-warning text-uppercase fw-bold">
+                        Create Account <i class="fas fa-user-plus ms-2"></i>
+                    </button>
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-muted small">By registering, you agree to our <a href="#" class="text-secondary text-decoration-none">Terms of Service</a> and <a href="#" class="text-secondary text-decoration-none">Privacy Policy</a>.</p>
+                    </div>
+                </form>
             </div>
-            
-            <div class="form-group">
-                <label>Username*</label>
-                {{ form.username }}
-                {% if form.username.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.username.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-            
-            <div class="form-group">
-                <label>Email*</label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.email.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-            
-            <div class="form-group">
-                <label>Password*</label>
-                {{ form.password1 }}
-                <div class="helptext">{{ form.password1.help_text }}</div>
-                {% if form.password1.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.password1.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-            
-            <div class="form-group">
-                <label>Confirm Password*</label>
-                {{ form.password2 }}
-                {% if form.password2.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.password2.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-auth">Sign Up</button>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}

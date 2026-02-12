@@ -4,286 +4,296 @@
 
 {% block extra_css %}
 <style>
-    .movie-detail {
-        background: linear-gradient(180deg, #1a1f26 0%, #0f1419 100%);
-        padding: 3rem 0;
-    }
-    
-    .movie-header {
-        display: grid;
-        grid-template-columns: 350px 1fr;
-        gap: 3rem;
-        margin-bottom: 3rem;
-    }
-    
-    .poster-large {
+    /* Parallax Backdrop */
+    .movie-backdrop {
+        position: absolute;
+        top: 60px; /* Navbar height */
+        left: 0;
         width: 100%;
-        height: 500px;
-        background: linear-gradient(135deg, #2c3138 0%, #1a1f26 100%);
-        border-radius: 12px;
+        height: 70vh;
+        z-index: 0;
         overflow: hidden;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        border: 1px solid rgba(0,188,212,0.1);
     }
     
-    .poster-large img {
+    .backdrop-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        filter: blur(4px) brightness(0.3);
+        transform: scale(1.1);
     }
     
-    @media (max-width: 968px) {
-        .movie-header {
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-        
-        .poster-large {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-    }
-    
-    .movie-details h1 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .movie-badges {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .badge {
-        background: #00bcd4;
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        font-weight: 600;
-    }
-    
-    .movie-description {
-        color: #b0b3b8;
-        line-height: 1.8;
-        margin-bottom: 2rem;
-    }
-    
-    .booking-section {
-        background: #1a1f26;
-        padding: 2rem;
-        border-radius: 10px;
-    }
-    
-    .filters {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-    }
-    
-    .filter-group {
-        flex: 1;
-        min-width: 200px;
-    }
-    
-    .filter-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        color: #b0b3b8;
-        font-weight: 600;
-    }
-    
-    .filter-group select {
+    .backdrop-gradient {
+        position: absolute;
+        bottom: 0;
+        left: 0;
         width: 100%;
-        padding: 0.8rem;
-        background: #2c3138;
-        border: 2px solid #3a3f47;
-        border-radius: 5px;
-        color: #fff;
-        cursor: pointer;
+        height: 100%;
+        background: linear-gradient(to bottom, transparent 0%, var(--bg-deep) 90%);
+    }
+
+    /* Content Layer */
+    .movie-content-wrapper {
+        position: relative;
+        z-index: 10;
+        margin-top: 15vh;
+        padding-bottom: 5rem;
     }
     
-    .date-tabs {
+    .poster-floater {
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        transition: transform 0.3s;
+        transform: translateY(0);
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .poster-floater:hover {
+        transform: translateY(-10px);
+    }
+    
+    /* Date Selector */
+    .date-scroller {
         display: flex;
         gap: 1rem;
-        margin-bottom: 2rem;
         overflow-x: auto;
+        padding-bottom: 1rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
     }
     
-    .date-tab {
-        background: #2c3138;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        cursor: pointer;
-        min-width: 120px;
+    .date-scroller::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .date-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        min-width: 90px;
+        padding: 1rem;
+        border-radius: 12px;
         text-align: center;
-        transition: all 0.3s;
-        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
         text-decoration: none;
-        color: #fff;
-        display: block;
+        color: var(--text-secondary);
+        flex-shrink: 0;
     }
     
-    .date-tab:hover {
-        border-color: #00bcd4;
+    .date-card:hover, .date-card.active {
+        background: var(--primary-accent);
+        border-color: var(--primary-accent);
+        color: #000;
+        transform: scale(1.05);
     }
     
-    .date-tab.active {
-        background: #00bcd4;
-        border-color: #00bcd4;
+    .date-card.active .date-day {
+        color: #000;
     }
-    
-    .date-day {
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-    
-    .date-full {
-        color: #b0b3b8;
-        font-size: 0.85rem;
-        margin-top: 0.3rem;
-    }
-    
-    .date-tab.active .date-full {
-        color: #fff;
-    }
-    
-    .showtimes {
-        margin-top: 2rem;
-    }
-    
-    .cinema-group {
-        background: #0f1419;
-        padding: 1.5rem;
+
+    /* Accordion Styles override */
+    .accordion-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
         border-radius: 8px;
-        margin-bottom: 1.5rem;
-    }
-    
-    .cinema-name {
-        font-size: 1.3rem;
-        font-weight: 600;
         margin-bottom: 1rem;
-        color: #00bcd4;
+        padding: 0;
+        overflow: hidden;
     }
     
-    .time-slots {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .time-slot {
-        background: #2c3138;
-        padding: 1rem 1.5rem;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: all 0.3s;
-        border: 2px solid transparent;
-        text-align: center;
-        text-decoration: none;
-        color: #fff;
-        display: block;
-    }
-    
-    .time-slot:hover {
-        border-color: #00bcd4;
-        transform: translateY(-3px);
-    }
-    
-    .time-text {
+    .accordion-button {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        box-shadow: none;
         font-weight: 600;
-        font-size: 1.1rem;
+        padding: 1.2rem;
     }
     
-    .price-text {
-        color: #00bcd4;
-        font-size: 0.9rem;
-        margin-top: 0.3rem;
+    .accordion-button:not(.collapsed) {
+        background: rgba(255, 215, 0, 0.1); /* Gold Tint */
+        color: var(--primary-accent);
+        box-shadow: none;
+    }
+    
+    .accordion-button::after {
+        filter: invert(1);
+    }
+    
+    /* Time Chips */
+    .time-chip {
+        background: var(--bg-deep);
+        border: 1px solid var(--border-color);
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 110px;
+    }
+    
+    .time-chip:hover {
+        border-color: var(--primary-accent);
+        color: var(--primary-accent);
+        background: rgba(255, 215, 0, 0.05);
+    }
+    
+    .time-chip.filling-fast {
+        border-color: #ff9800;
+    }
+    
+    .time-chip.filling-fast::after {
+        content: 'Fast Filling';
+        position: absolute;
+        top: 0;
+        right: 0;
+        font-size: 0.6rem;
+        background: #ff9800;
+        color: black;
+        padding: 2px 6px;
+        border-bottom-left-radius: 6px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="movie-detail">
-    <div class="container">
-        <div class="movie-header">
-            <div class="poster-large">
+<!-- Backdrops -->
+<div class="movie-backdrop">
+    <img src="{% if movie.poster %}{{ movie.poster.url }}{% else %}https://via.placeholder.com/1920x1080{% endif %}" class="backdrop-image">
+    <div class="backdrop-gradient"></div>
+</div>
+
+<div class="container movie-content-wrapper">
+    <div class="row gx-5">
+        <!-- Sticky Poster -->
+        <div class="col-lg-4 mb-5 mb-lg-0">
+            <div class="poster-floater sticky-top" style="top: 100px;">
                 {% if movie.poster %}
-                    <img src="{{ movie.poster.url }}" alt="{{ movie.title }}">
+                    <img src="{{ movie.poster.url }}" class="w-100 d-block" alt="{{ movie.title }}">
                 {% else %}
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 5rem;">🎬</div>
+                    <div class="bg-dark d-flex align-items-center justify-content-center text-muted" style="height: 500px;">
+                        <i class="fas fa-film fa-5x"></i>
+                    </div>
                 {% endif %}
-            </div>
-            
-            <div class="movie-details">
-                <h1>{{ movie.title }}</h1>
-                <div class="movie-badges">
-                    <span class="badge">{{ movie.rating }}</span>
-                    <span class="badge">{{ movie.language }}</span>
-                    <span class="badge">{{ movie.duration }} min</span>
-                </div>
-                <div class="movie-description">
-                    {{ movie.description }}
-                </div>
-                <div style="color: #b0b3b8;">
-                    <strong>Genre:</strong> {{ movie.genre }}<br>
-                    <strong>Release Date:</strong> {{ movie.release_date|date:"F d, Y" }}
+                
+                <div class="p-3 bg-card d-flex justify-content-around text-center border-top border-secondary">
+                    <div>
+                        <div class="small text-muted text-uppercase">Rating</div>
+                        <div class="fw-bold text-warning"><i class="fas fa-star me-1"></i>{{ movie.rating }}</div>
+                    </div>
+                    <div class="border-end border-secondary"></div>
+                    <div>
+                        <div class="small text-muted text-uppercase">Duration</div>
+                        <div class="fw-bold text-white">{{ movie.duration }}m</div>
+                    </div>
+                    <div class="border-end border-secondary"></div>
+                    <div>
+                        <div class="small text-muted text-uppercase">Genre</div>
+                        <div class="fw-bold text-white">{{ movie.genre }}</div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="booking-section">
-            <h2 style="margin-bottom: 1.5rem;">Select Cinema & Time</h2>
+        <!-- Details & Booking -->
+        <div class="col-lg-8 animate__animated animate__fadeInUp">
+            <h1 class="display-3 fw-bold mb-2">{{ movie.title }}</h1>
+            <div class="mb-4">
+                <span class="badge bg-warning text-dark me-2">{{ movie.rating }}</span>
+                <span class="badge bg-secondary me-2">{{ movie.language }}</span>
+                <span class="badge border border-secondary text-light">4K Dolby Atmos</span>
+            </div>
             
-            <form method="get">
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>Select Cinema</label>
-                        <select name="cinema" onchange="this.form.submit()">
-                            <option value="">All Cinemas</option>
-                            {% for cinema in cinemas %}
-                                <option value="{{ cinema.id }}" {% if selected_cinema == cinema.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ cinema.name }} - {{ cinema.location }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+            <p class="lead text-gray-300 mb-4">{{ movie.description }}</p>
+            
+            <div class="d-flex gap-3 mb-5">
+                <button class="btn btn-primary rounded-pill px-4">
+                    <i class="fas fa-play me-2"></i> Watch Trailer
+                </button>
+                <button class="btn btn-outline-light rounded-pill px-4" onclick="document.getElementById('booking-section').scrollIntoView({behavior: 'smooth'})">
+                    <i class="fas fa-ticket-alt me-2"></i> Get Tickets
+                </button>
+            </div>
+            
+            <hr class="border-secondary mb-5 op-2">
+            
+            <!-- Booking Section -->
+            <div id="booking-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold">Showtimes</h3>
+                    
+                    <form method="get" class="d-flex" id="filterForm">
+                         <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                         <select name="cinema" class="form-select bg-dark text-white border-secondary rounded-pill" onchange="document.getElementById('filterForm').submit()">
+                             <option value="">All Cinemas</option>
+                             {% for cinema in cinemas %}
+                                 <option value="{{ cinema.id }}" {% if selected_cinema == cinema.id|stringformat:"s" %}selected{% endif %}>{{ cinema.name }}</option>
+                             {% endfor %}
+                         </select>
+                    </form>
                 </div>
                 
-                <div class="date-tabs">
-                    {% for date in dates %}
-                    <a href="?date={{ date|date:"Y-m-d" }}{% if selected_cinema %}&cinema={{ selected_cinema }}{% endif %}" 
-                       class="date-tab {% if date == selected_date %}active{% endif %}">
-                        <div class="date-day">{{ date|date:"D" }}</div>
-                        <div class="date-full">{{ date|date:"M d" }}</div>
-                    </a>
+                <!-- Date Selector -->
+                <div class="mb-4 position-relative">
+                   <div class="date-scroller px-2">
+                       {% for date in dates %}
+                           <a href="?date={{ date|date:"Y-m-d" }}{% if selected_cinema %}&cinema={{ selected_cinema }}{% endif %}#booking-section" 
+                              class="date-card {% if date == selected_date %}active{% endif %}">
+                               <div class="small text-uppercase fw-bold mb-1">{{ date|date:"D" }}</div>
+                               <div class="h4 fw-bold mb-0 date-day">{{ date|date:"d" }}</div>
+                               <div class="small mt-1">{{ date|date:"M" }}</div>
+                           </a>
+                       {% endfor %}
+                   </div>
+                </div>
+                
+                <!-- Cinemas Accordion -->
+                <div class="accordion" id="cinemaAccordion">
+                    {% regroup showtimes by screen.cinema as cinema_showtimes %}
+                    
+                    {% for cinema_group in cinema_showtimes %}
+                        <div class="accordion-item border-0 mb-3 bg-transparent">
+                            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                <button class="accordion-button rounded-3 {% if not forloop.first %}collapsed{% endif %} shadow-sm" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
+                                    <div class="d-flex align-items-center w-100">
+                                        <div class="me-3">
+                                            <div class="fw-bold text-white h5 mb-0">{{ cinema_group.grouper.name }}</div>
+                                            <small class="text-muted">{{ cinema_group.grouper.location }}</small>
+                                        </div>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                                 data-bs-parent="#cinemaAccordion">
+                                <div class="accordion-body bg-card rounded-bottom-3 border border-top-0 border-secondary">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        {% for showtime in cinema_group.list %}
+                                            <a href="{% url 'select_seats' showtime.id %}" class="time-chip {% cycle '' 'filling-fast' '' '' %}">
+                                                <span class="fw-bold fs-5">{{ showtime.start_time|date:"H:i" }}</span>
+                                                <small class="text-muted">Rs. {{ showtime.price }}</small>
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-5 rounded-3 bg-card border border-dashed border-secondary">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No showtimes available</h5>
+                            <p class="text-secondary small">Try selecting a different date or cinema.</p>
+                        </div>
                     {% endfor %}
                 </div>
-            </form>
-            
-            <div class="showtimes">
-                {% regroup showtimes by screen.cinema as cinema_showtimes %}
-                
-                {% for cinema_group in cinema_showtimes %}
-                <div class="cinema-group">
-                    <div class="cinema-name">
-                        {{ cinema_group.grouper.name }} - {{ cinema_group.grouper.location }}
-                    </div>
-                    <div class="time-slots">
-                        {% for showtime in cinema_group.list %}
-                        <a href="{% url 'select_seats' showtime.id %}" class="time-slot">
-                            <div class="time-text">{{ showtime.start_time|date:"H:i" }}</div>
-                            <div class="price-text">Rs. {{ showtime.price }}</div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% empty %}
-                <p style="color: #b0b3b8; text-align: center; padding: 2rem;">
-                    No showtimes available for the selected date and cinema.
-                </p>
-                {% endfor %}
             </div>
+            
         </div>
     </div>
 </div>

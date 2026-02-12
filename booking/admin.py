@@ -9,9 +9,14 @@ class CinemaAdmin(admin.ModelAdmin):
 
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
-    list_display = ['title', 'genre', 'language', 'rating', 'release_date', 'is_now_showing']
+    list_display = ['title_display', 'genre', 'language', 'rating', 'release_date', 'is_now_showing']
     list_filter = ['is_now_showing', 'rating', 'genre', 'language']
     search_fields = ['title', 'description']
+    list_editable = ['is_now_showing']
+    
+    def title_display(self, obj):
+        return f"{obj.title} ({obj.release_date.year})"
+    title_display.short_description = 'Movie'
 
 @admin.register(Screen)
 class ScreenAdmin(admin.ModelAdmin):
@@ -23,6 +28,7 @@ class ShowtimeAdmin(admin.ModelAdmin):
     list_display = ['movie', 'screen', 'start_time', 'price']
     list_filter = ['movie', 'screen__cinema', 'start_time']
     date_hierarchy = 'start_time'
+    list_editable = ['price']
 
 @admin.register(Seat)
 class SeatAdmin(admin.ModelAdmin):

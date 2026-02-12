@@ -558,3 +558,65 @@ def cancel_booking(request, booking_id):
         return redirect('my_bookings')
     
     return redirect('request_cancellation', booking_id=booking.id)
+from django.db.models import Sum, Count
+from django.contrib.auth.decorators import user_passes_test
+
+def is_admin(user):
+    return user.is_authenticated and user.is_staff
+
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    # Stats
+    total_revenue = Booking.objects.filter(status='Confirmed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_tickets = SeatBooking.objects.filter(booking__status='Confirmed').count()
+    active_movies = Movie.objects.filter(is_now_showing=True).count()
+    users_count = User.objects.count()
+    
+    # Recent Bookings
+    recent_bookings = Booking.objects.order_by('-booking_date')[:5]
+    
+    # Validation Requests (Cancellation)
+    pending_cancellations = CancellationRequest.objects.filter(status='Pending').order_by('-request_date')
+    
+    context = {
+        'total_revenue': total_revenue,
+        'total_tickets': total_tickets,
+        'active_movies': active_movies,
+        'users_count': users_count,
+        'recent_bookings': recent_bookings,
+        'pending_cancellations': pending_cancellations,
+    }
+    return render(request, 'booking/admin_dashboard.html', context)
+
+@user_passes_test(is_admin)
+def approve_cancellation(request, request_id):
+    cancellation = get_object_or_404(CancellationRequest, id=request_id)
+    if cancellation.status == 'Pending':
+        cancellation.status = 'Approved'
+        cancellation.admin_response = "Approved by Admin"
+        cancellation.save()
+        
+        # Update booking status
+        booking = cancellation.booking
+        booking.status = 'Cancelled'
+        booking.save()
+        
+        # Release seats
+        for seat in booking.seats.all():
+            SeatBooking.objects.filter(booking=booking, seat=seat).delete()
+            
+        messages.success(request, f"Cancellation approved for Booking {booking.booking_reference}")
+    
+    return redirect('admin_dashboard')
+
+@user_passes_test(is_admin)
+def reject_cancellation(request, request_id):
+    if request.method == 'POST':
+        cancellation = get_object_or_404(CancellationRequest, id=request_id)
+        if cancellation.status == 'Pending':
+            cancellation.status = 'Rejected'
+            cancellation.admin_response = request.POST.get('reason', 'Rejected by Admin')
+            cancellation.save()
+            messages.warning(request, f"Cancellation rejected for Booking {cancellation.booking.booking_reference}")
+    
+    return redirect('admin_dashboard')

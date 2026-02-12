@@ -4,15 +4,11 @@
 
 {% block extra_css %}
 <style>
-    /* Hero Section */
-    .hero-section {
-        position: relative;
+    /* Hero Carousel */
+    .hero-slide {
         height: 80vh;
-        width: 100%;
-        overflow: hidden;
-        border-radius: 20px;
-        margin-bottom: 3rem;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        min-height: 500px;
+        position: relative;
     }
     
     .hero-bg {
@@ -21,244 +17,216 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: url('https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'); /* Baahubali 2 / Generic Action */
         background-size: cover;
-        background-position: center top;
-        filter: brightness(0.8);
+        background-position: center;
+        filter: blur(8px) brightness(0.4);
+        transform: scale(1.1);
     }
     
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to right, #0b0f19 0%, rgba(11, 15, 25, 0.8) 40%, rgba(11, 15, 25, 0) 100%);
-    }
-
-    .hero-content {
+    .hero-poster-container {
         position: relative;
         z-index: 2;
         height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-left: 4rem;
-        max-width: 600px;
     }
-
-    .hero-title {
-        font-size: 4rem;
-        font-weight: 800;
-        line-height: 1.1;
-        margin-bottom: 1rem;
-        background: linear-gradient(45deg, #fff, #ccc);
-        background-clip: text;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    
+    .hero-poster {
+        height: 500px;
+        border-radius: 20px;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
     }
-
-    .hero-meta {
-        font-size: 1.1rem;
-        color: var(--text-secondary);
-        margin-bottom: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-    }
-
-    .meta-badge {
-        border: 1px solid var(--text-secondary);
-        padding: 0.2rem 0.8rem;
-        border-radius: 4px;
-        font-size: 0.9rem;
-    }
-
-    .hero-desc {
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-        line-height: 1.6;
-        margin-bottom: 2.5rem;
-    }
-
-    /* Movie Card */
-    .movie-card {
-        background-color: var(--bg-card);
-        border: none;
-        border-radius: 12px;
-        overflow: hidden;
-        transition: all 0.4s ease;
+    
+    /* Search Bar */
+    .search-floater {
+        z-index: 100;
+        margin-top: -40px;
         position: relative;
     }
-
-    .movie-card:hover {
-        transform: translateY(-10px);
+    
+    .search-bar {
+        background: rgba(44, 44, 44, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50px;
+        padding: 0.5rem 1rem;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    }
+    
+    .search-input {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.1rem;
+    }
+    
+    .search-input:focus {
+        background: transparent;
+        color: white;
+        box-shadow: none;
+    }
+    
+    /* Movie Cards */
+    .movie-card-new {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .movie-card-new:hover {
+        transform: scale(1.03) translateY(-10px);
+        z-index: 10;
         box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
-
-    .card-img-wrapper {
-        position: relative;
-        padding-top: 150%; /* 2:3 Aspect Ratio */
-        overflow: hidden;
-    }
-
-    .card-img-top {
-        position: absolute;
-        top: 0;
-        left: 0;
+    
+    .movie-card-new .poster-img {
         width: 100%;
-        height: 100%;
+        aspect-ratio: 2/3;
         object-fit: cover;
-        transition: transform 0.5s ease;
     }
-
-    .movie-card:hover .card-img-top {
-        transform: scale(1.05);
-    }
-
-    .card-overlay {
+    
+    .hover-overlay {
         position: absolute;
-        top: 0;
+        bottom: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(to top, rgba(11, 15, 25, 0.9) 0%, transparent 60%);
-        opacity: 0.8;
-    }
-
-    .card-content {
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, transparent 60%);
+        opacity: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
         padding: 1.5rem;
-        position: relative;
-    }
-
-    .movie-title {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        color: var(--text-primary);
+        transition: opacity 0.3s ease;
     }
     
-    .movie-info {
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .rating-star {
-        color: var(--gold);
+    .movie-card-new:hover .hover-overlay {
+        opacity: 1;
     }
     
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: end;
-        margin-bottom: 2rem;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 1rem;
-    }
-    
-    .section-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        position: relative;
-    }
-    
-    .section-title::after {
-        content: '';
-        position: absolute;
-        bottom: -1rem; /* Aligns with border-bottom */
-        left: 0;
-        width: 60px;
-        height: 4px;
-        background-color: var(--primary-accent);
-        border-radius: 2px;
+    .movie-badge {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(5px);
+        margin-right: 0.5rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero-section">
-    <!-- Dynamic Background from Featured Movie (Hardcoded logic for demo, usually dynamic) -->
-    <div class="hero-bg"></div>
-    <div class="hero-overlay"></div>
-    
-    <div class="hero-content">
-        <h1 class="hero-title">Baahubali 2:<br>The Conclusion</h1>
-        <div class="hero-meta">
-            <span class="meta-badge">U/A</span>
-            <span><i class="fas fa-clock text-muted me-2"></i>2h 47m</span>
-            <span><i class="fas fa-calendar text-muted me-2"></i>Action, Drama</span>
-            <span><i class="fas fa-star rating-star me-2"></i>8.2</span>
-        </div>
-        <p class="hero-desc">
-            When Shiva, the son of Bahubali, learns about his heritage, he begins to look for answers. His story is juxtaposed with past events that unfolded in the Mahishmati Kingdom.
-        </p>
-        <div class="d-flex gap-3">
-            <a href="{% url 'movies' %}" class="btn btn-primary btn-lg px-5">
-                <i class="fas fa-ticket-alt me-2"></i>Book Now
-            </a>
-            <button class="btn btn-outline-light btn-lg px-4">
-                <i class="fas fa-play me-2"></i>Watch Trailer
-            </button>
-        </div>
-    </div>
-</section>
-
-<!-- Now Showing Section -->
-<section class="mb-5">
-    <div class="section-header">
-        <h2 class="section-title">Now Showing</h2>
-        <a href="{% url 'movies' %}" class="text-decoration-none text-muted hover-primary">
-            View All <i class="fas fa-chevron-right ms-1"></i>
-        </a>
-    </div>
-
-    {% if now_showing %}
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-            {% for movie in now_showing %}
-                <div class="col">
-                    {% url 'movie_detail' movie.id as movie_detail_url %}
-                    <div class="movie-card h-100" onclick="window.location.href='{{ movie_detail_url }}';" style="cursor: pointer;">
-                        <div class="card-img-wrapper">
-                            {% if movie.poster %}
-                                <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
-                            {% else %}
-                                <div class="card-img-top bg-dark d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-film fa-3x text-muted"></i>
-                                </div>
-                            {% endif %}
-                            <div class="card-overlay"></div>
+<!-- Hero Carousel -->
+<div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+    <div class="carousel-inner">
+        {% for movie in now_showing %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %} hero-slide">
+            <!-- Background Blur -->
+            <div class="hero-bg" style="background-image: url('{% if movie.poster %}{{ movie.poster.url }}{% else %}https://via.placeholder.com/1920x1080{% endif %}');"></div>
+            <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-50"></div>
+            
+            <div class="container h-100 position-relative z-index-1">
+                <div class="row h-100 align-items-center">
+                    <div class="col-lg-6 text-white animate__animated animate__fadeInLeft">
+                        <span class="text-warning fw-bold letter-spacing-2 text-uppercase mb-2 d-block">Now Showing</span>
+                        <h1 class="display-2 fw-bolder mb-3" style="font-family: var(--font-heading);">{{ movie.title }}</h1>
+                        <div class="d-flex align-items-center mb-4 text-light opacity-75 fs-5">
+                            <span class="me-3"><i class="fas fa-star text-warning me-1"></i>{{ movie.rating|default:"N/A" }}</span>
+                            <span class="me-3">{{ movie.duration }} min</span>
+                            <span>{{ movie.genre }}</span>
                         </div>
-                        
-                        <div class="card-content">
-                            <h5 class="movie-title">{{ movie.title }}</h5>
-                            <div class="movie-info">
-                                <span>{{ movie.genre|default:"Movie" }}</span>
-                                {% if movie.rating %}
-                                    <span><i class="fas fa-star rating-star me-1"></i>{{ movie.rating }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="d-grid mt-3">
-                                <button class="btn btn-primary btn-sm">Book Ticket</button>
-                            </div>
+                        <p class="lead mb-5 d-none d-md-block text-gray-300" style="max-width: 90%;">{{ movie.description|truncatewords:25 }}</p>
+                        <div class="d-flex gap-3">
+                            <a href="{% url 'movie_detail' movie.id %}" class="btn btn-primary btn-lg shadow-warning px-5 rounded-pill">
+                                <i class="fas fa-ticket-alt me-2"></i> Book Tickets
+                            </a>
+                            <button class="btn btn-outline-light btn-lg rounded-pill px-4 backdrop-blur">
+                                <i class="fas fa-play me-2"></i> Trailer
+                            </button>
                         </div>
                     </div>
+                    <div class="col-lg-6 d-none d-lg-flex justify-content-center animate__animated animate__fadeInRight">
+                        {% if movie.poster %}
+                        <img src="{{ movie.poster.url }}" alt="{{ movie.title }}" class="hero-poster d-block mx-auto">
+                        {% endif %}
+                    </div>
                 </div>
-            {% endfor %}
+            </div>
         </div>
-    {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-film fa-4x text-muted mb-4 opacity-50"></i>
-            <h4 class="text-white">No Movies Currently Showing</h4>
-            <p class="text-secondary">Check back soon for new releases!</p>
+        {% empty %}
+        <!-- Fallback if no movies -->
+        <div class="carousel-item active hero-slide d-flex align-items-center justify-content-center bg-dark text-white">
+            <div class="text-center">
+                <h2>No movies currently showing</h2>
+                <p>Check back later!</p>
+            </div>
         </div>
-    {% endif %}
-</section>
+        {% endfor %}
+    </div>
+    
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
+
+<!-- Sticky Search Bar -->
+<div class="container sticky-top search-floater">
+    <form action="{% url 'movies' %}" method="GET" class="search-bar d-flex align-items-center">
+        <i class="fas fa-search text-warning fs-5 ms-3"></i>
+        <input type="text" name="search" class="form-control search-input mx-2" placeholder="Search for movies, cinemas, or genres..." value="{{ request.GET.search }}">
+        <div class="d-none d-md-flex gap-2">
+            <select name="date" class="form-select bg-transparent text-light border-0" style="width: auto;">
+                <option value="" class="text-dark">Date</option>
+                <option value="today" class="text-dark">Today</option>
+                <option value="tomorrow" class="text-dark">Tomorrow</option>
+            </select>
+            <button type="submit" class="btn btn-primary rounded-pill px-4">Find</button>
+        </div>
+    </form>
+</div>
+
+<!-- Movie Grid -->
+<div class="container py-5 mt-4">
+    <div class="d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <span class="text-warning fw-bold text-uppercase small">What's On</span>
+            <h2 class="display-6 fw-bold text-white">Now Showing</h2>
+        </div>
+        <a href="{% url 'movies' %}" class="btn btn-outline-light rounded-pill btn-sm px-4">See All</a>
+    </div>
+
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+        {% for movie in now_showing %}
+        <div class="col">
+            <a href="{% url 'movie_detail' movie.id %}" class="movie-card-new d-block text-decoration-none">
+                {% if movie.poster %}
+                <img src="{{ movie.poster.url }}" alt="{{ movie.title }}" class="poster-img">
+                {% else %}
+                <div class="poster-img bg-dark d-flex align-items-center justify-content-center text-muted">
+                    <i class="fas fa-film fa-2x"></i>
+                </div>
+                {% endif %}
+                
+                <div class="hover-overlay">
+                    <h5 class="fw-bold text-white mb-1">{{ movie.title }}</h5>
+                    <div class="d-flex justify-content-between align-items-center text-sm text-gray-300 mb-3">
+                        <span>{{ movie.genre }}</span>
+                        <span class="text-warning"><i class="fas fa-star text-xs me-1"></i>{{ movie.rating }}</span>
+                    </div>
+                    <span class="btn btn-primary w-100 rounded-pill btn-sm">Get Tickets</span>
+                </div>
+            </a>
+            <div class="mt-3">
+                <h6 class="text-white fw-bold mb-0 text-truncate">{{ movie.title }}</h6>
+                <small class="text-muted">{{ movie.duration }} min • {{ movie.language }}</small>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

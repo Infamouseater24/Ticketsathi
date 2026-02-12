@@ -2,216 +2,351 @@
 
 {% block title %}Payment - ASA Cinemas{% endblock %}
 
+{% block extra_css %}
+<style>
+    .payment-container {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 3rem;
+        align-items: start;
+    }
+    
+    @media (max-width: 992px) {
+        .payment-container {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Payment Methods */
+    .payment-methods-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 2rem;
+    }
+    
+    .method-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .method-option {
+         position: relative;
+    }
+    
+    .method-option input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+    }
+    
+    .method-card {
+        background: var(--bg-deep);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
+    }
+    
+    .method-option input:checked + .method-card {
+        border-color: var(--primary-accent);
+        opacity: 1;
+        background: rgba(255, 215, 0, 0.05);
+        transform: translateY(-5px);
+    }
+    
+    .method-option:hover .method-card {
+        opacity: 1;
+        border-color: var(--text-muted);
+    }
+    
+    .method-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Order Summary */
+    .summary-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        position: sticky;
+        top: 100px;
+    }
+    
+    .summary-header {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: center;
+    }
+    
+    .summary-poster {
+        width: 120px;
+        border-radius: 8px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        margin-bottom: 1rem;
+    }
+    
+    .summary-body {
+        padding: 1.5rem;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+    
+    .summary-total {
+        border-top: 1px dashed var(--border-color);
+        padding-top: 1rem;
+        margin-top: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .total-amount {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-accent);
+    }
+    
+    /* Form Styles */
+    .form-control, .form-select {
+        background: var(--bg-deep);
+        border: 1px solid var(--border-color);
+        color: #fff;
+        padding: 0.8rem 1rem;
+    }
+    
+    .form-control:focus {
+        background: var(--bg-deep);
+        border-color: var(--primary-accent);
+        color: #fff;
+        box-shadow: none;
+    }
+    
+    .secure-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: #4caf50;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+        background: rgba(76, 175, 80, 0.1);
+        padding: 0.5rem;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Booking Summary -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Booking Summary</h5>
+    <div class="mb-4">
+        <a href="{% url 'select_seats' booking.showtime.id %}" class="text-secondary text-decoration-none">
+            <i class="fas fa-arrow-left me-2"></i>Back to Seat Selection
+        </a>
+    </div>
+
+    <form method="post" class="payment-container" id="paymentForm">
+        {% csrf_token %}
+        
+        <!-- Left Column: Payment Methods -->
+        <div class="payment-methods-card">
+            <h3 class="fw-bold mb-4">Choose Payment Method</h3>
+            
+            <div class="method-selector">
+                <div class="method-option">
+                    <input type="radio" name="payment_method" value="card" checked id="method_card">
+                    <label for="method_card" class="method-card">
+                        <i class="fas fa-credit-card method-icon text-white"></i>
+                        <span class="fw-bold d-block">Card</span>
+                        <small class="text-muted">Credit / Debit</small>
+                    </label>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Movie:</strong> {{ booking.showtime.movie.title }}</p>
-                            <p><strong>Cinema:</strong> {{ booking.showtime.screen.cinema.name }}</p>
-                            <p><strong>Screen:</strong> {{ booking.showtime.screen.name }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Date & Time:</strong> {{ booking.showtime.start_time|date:"F d, Y - H:i" }}</p>
-                            <p><strong>Seats:</strong> 
-                                {% for seat in booking.seats.all %}
-                                    {{ seat.row }}{{ seat.number }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                            </p>
-                            <p><strong>Booking Reference:</strong> {{ booking.booking_reference }}</p>
+                
+                <div class="method-option">
+                    <input type="radio" name="payment_method" value="esewa" id="method_esewa">
+                    <label for="method_esewa" class="method-card">
+                        <i class="fas fa-wallet method-icon text-success"></i>
+                        <span class="fw-bold d-block">eSewa</span>
+                        <small class="text-muted">Digital Wallet</small>
+                    </label>
+                </div>
+                
+                <div class="method-option">
+                    <input type="radio" name="payment_method" value="khalti" id="method_khalti">
+                    <label for="method_khalti" class="method-card">
+                        <i class="fas fa-mobile-alt method-icon text-purple"></i>
+                        <span class="fw-bold d-block">Khalti</span>
+                        <small class="text-muted">Digital Wallet</small>
+                    </label>
+                </div> <!-- Added Font Awesome purple text class or custom needed -->
+
+                 <div class="method-option">
+                    <input type="radio" name="payment_method" value="fonepay" id="method_fonepay">
+                    <label for="method_fonepay" class="method-card">
+                        <i class="fas fa-qrcode method-icon text-danger"></i>
+                        <span class="fw-bold d-block">FonePay</span>
+                        <small class="text-muted">Scan & Pay</small>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Card Details Form -->
+            <div id="cardDetails" class="animate__animated animate__fadeIn">
+                <h5 class="mb-3 border-bottom border-secondary pb-2">Enter Card Details</h5>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label text-muted small text-uppercase">Card Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-deep border-secondary text-muted"><i class="fas fa-credit-card"></i></span>
+                            <input type="text" name="card_number" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19">
                         </div>
                     </div>
-                    <hr>
-                    <div class="text-end">
-                        <h4 class="text-primary">Total Amount: <strong>Rs. {{ booking.total_amount }}</strong></h4>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small text-uppercase">Expiry Date</label>
+                        <input type="text" name="expiry" class="form-control" placeholder="MM/YY" maxlength="5">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small text-uppercase">CVV / CVC</label>
+                        <div class="input-group">
+                            <input type="password" name="cvv" class="form-control" placeholder="123" maxlength="4">
+                            <span class="input-group-text bg-deep border-secondary text-muted"><i class="fas fa-question-circle"></i></span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small text-uppercase">Cardholder Name</label>
+                        <input type="text" name="cardholder_name" class="form-control" placeholder="Name on Card">
                     </div>
                 </div>
             </div>
 
-                                    <div class="form-check payment-option">
-                                        <input class="form-check-input" type="radio" name="payment_method" 
-                                               id="card" value="card" checked>
-                                        <label class="form-check-label w-100" for="card">
-                                            <div class="card h-100 border-primary">
-                                                <div class="card-body text-center">
-                                                    <i class="fas fa-credit-card fa-2x text-primary mb-2"></i>
-                                                    <h6>Credit/Debit Card</h6>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check payment-option">
-                                        <input class="form-check-input" type="radio" name="payment_method" 
-                                               id="esewa" value="esewa">
-                                        <label class="form-check-label w-100" for="esewa">
-                                            <div class="card h-100">
-                                                <div class="card-body text-center">
-                                                    <i class="fas fa-wallet fa-2x text-success mb-2"></i>
-                                                    <h6>eSewa</h6>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check payment-option">
-                                        <input class="form-check-input" type="radio" name="payment_method" 
-                                               id="khalti" value="khalti">
-                                        <label class="form-check-label w-100" for="khalti">
-                                            <div class="card h-100">
-                                                <div class="card-body text-center">
-                                                    <i class="fas fa-mobile-alt fa-2x text-danger mb-2"></i>
-                                                    <h6>Khalti</h6>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check payment-option">
-                                        <input class="form-check-input" type="radio" name="payment_method" 
-                                               id="fonepay" value="fonepay">
-                                        <label class="form-check-label w-100" for="fonepay">
-                                            <div class="card h-100">
-                                                <div class="card-body text-center">
-                                                    <i class="fas fa-money-bill-wave fa-2x text-warning mb-2"></i>
-                                                    <h6>FonePay</h6>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+            <!-- Wallet Message -->
+            <div id="walletDetails" class="animate__animated animate__fadeIn d-none">
+                <div class="alert alert-info bg-deep border-info text-info">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-external-link-alt me-3 fa-2x"></i>
+                        <div>
+                            <strong>Redirecting to Payment Gateway</strong>
+                            <p class="mb-0 small">You will be securely redirected to complete your payment.</p>
                         </div>
-
-                        <!-- Card Payment Details (shown when card is selected) -->
-                        <div id="cardDetails" class="payment-details">
-                            <h6 class="mb-3">Card Details</h6>
-                            <div class="mb-3">
-                                <label class="form-label">Card Number</label>
-                                <input type="text" class="form-control" name="card_number" 
-                                       placeholder="1234 5678 9012 3456" maxlength="19">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Cardholder Name</label>
-                                <input type="text" class="form-control" name="cardholder_name" 
-                                       placeholder="JOHN DOE">
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Expiry Date</label>
-                                    <input type="text" class="form-control" name="expiry" 
-                                           placeholder="MM/YY" maxlength="5">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">CVV</label>
-                                    <input type="text" class="form-control" name="cvv" 
-                                           placeholder="123" maxlength="3">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Digital Wallet Details -->
-                        <div id="walletDetails" class="payment-details" style="display: none;">
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i> You will be redirected to complete the payment.
-                            </div>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-lock"></i> Pay Rs. {{ booking.total_amount }}
-                            </button>
-                            <a href="{% url 'select_seats' booking.showtime.id %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to Seat Selection
-                            </a>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
-
-            <!-- Security Notice -->
-            <div class="text-center mt-3 text-muted small">
-                <i class="fas fa-shield-alt"></i> Your payment information is secure and encrypted
+            
+            <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold text-uppercase mt-4 shadow-warning transition-transform">
+                Complete Payment <i class="fas fa-check-circle ms-2"></i>
+            </button>
+            
+            <div class="secure-badge">
+                <i class="fas fa-lock"></i> 256-bit SSL Ecrypted Payment
             </div>
         </div>
-    </div>
+        
+        <!-- Right Column: Summary -->
+        <div class="summary-card">
+            <div class="summary-header">
+                {% if booking.showtime.movie.poster %}
+                    <img src="{{ booking.showtime.movie.poster.url }}" alt="{{ booking.showtime.movie.title }}" class="summary-poster">
+                {% endif %}
+                <h4 class="fw-bold mb-1">{{ booking.showtime.movie.title }}</h4>
+                <div class="badge bg-warning text-dark">{{ booking.showtime.movie.rating }}</div>
+            </div>
+            <div class="summary-body">
+                <div class="summary-row">
+                    <span>Cinema</span>
+                    <span class="text-white text-end">{{ booking.showtime.screen.cinema.name }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Screen</span>
+                    <span class="text-white text-end">{{ booking.showtime.screen.name }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Date & Time</span>
+                    <span class="text-white text-end">
+                        {{ booking.showtime.start_time|date:"M d, Y" }}<br>
+                        {{ booking.showtime.start_time|date:"H:i" }}
+                    </span>
+                </div>
+                <div class="summary-row">
+                    <span>Seats</span>
+                    <span class="text-white text-end">
+                        {% for seat in booking.seats.all %}
+                            {{ seat.row }}{{ seat.number }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+                
+                <div class="summary-total">
+                    <span class="text-muted">Total to Pay</span>
+                    <span class="total-amount">Rs. {{ booking.total_amount }}</span>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
-<style>
-.payment-option {
-    cursor: pointer;
-}
-
-.payment-option input[type="radio"] {
-    display: none;
-}
-
-.payment-option .card {
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.payment-option .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.payment-option input[type="radio"]:checked + label .card {
-    border: 2px solid #0d6efd;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
-}
-</style>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
-    const cardDetails = document.getElementById('cardDetails');
-    const walletDetails = document.getElementById('walletDetails');
-    
-    paymentMethods.forEach(method => {
-        method.addEventListener('change', function() {
-            if (this.value === 'card') {
-                cardDetails.style.display = 'block';
-                walletDetails.style.display = 'none';
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+        const cardDetails = document.getElementById('cardDetails');
+        const walletDetails = document.getElementById('walletDetails');
+        
+        function toggleDetails(value) {
+            if (value === 'card') {
+                cardDetails.classList.remove('d-none');
+                walletDetails.classList.add('d-none');
             } else {
-                cardDetails.style.display = 'none';
-                walletDetails.style.display = 'block';
+                cardDetails.classList.add('d-none');
+                walletDetails.classList.remove('d-none');
             }
+        }
+
+        paymentMethods.forEach(method => {
+            method.addEventListener('change', function() {
+               toggleDetails(this.value);
+            });
         });
+        
+        // Card formatting
+        const cardInput = document.querySelector('input[name="card_number"]');
+        if(cardInput) {
+            cardInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                e.target.value = value.replace(/(.{4})/g, '$1 ').trim();
+            });
+        }
+        
+        const expiryInput = document.querySelector('input[name="expiry"]');
+        if(expiryInput) {
+             expiryInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 2) {
+                    e.target.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                } else {
+                    e.target.value = value;
+                }
+            });
+        }
     });
-    
-    // Card number formatting
-    const cardNumberInput = document.querySelector('input[name="card_number"]');
-    if (cardNumberInput) {
-        cardNumberInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            e.target.value = formattedValue;
-        });
-    }
-    
-    // Expiry formatting
-    const expiryInput = document.querySelector('input[name="expiry"]');
-    if (expiryInput) {
-        expiryInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length >= 2) {
-                value = value.slice(0, 2) + '/' + value.slice(2, 4);
-            }
-            e.target.value = value;
-        });
-    }
-});
 </script>
 {% endblock %}

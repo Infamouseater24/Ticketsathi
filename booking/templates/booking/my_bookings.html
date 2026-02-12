@@ -6,365 +6,243 @@
 
 {% block extra_css %}
 <style>
-    .page-wrapper {
+    .dashboard-container {
+        padding: 2rem 0;
+        min-height: 80vh;
+    }
+    
+    /* Sidebar */
+    .profile-sidebar {
+        background: var(--bg-card);
+        border-radius: 12px;
         padding: 2rem;
-        background: #f5f5f5;
-        min-height: 70vh;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        position: sticky;
+        top: 100px;
     }
     
-    .page-header {
-        margin-bottom: 2rem;
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: var(--primary-accent);
+        color: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        margin: 0 auto 1.5rem;
+        font-weight: bold;
     }
     
-    .page-header h1 {
-        font-size: 2rem;
-        color: #2c3e50;
+    .nav-pills .nav-link {
+        color: var(--text-secondary);
+        padding: 1rem;
+        border-radius: 8px;
+        transition: all 0.3s;
+        text-align: left;
         margin-bottom: 0.5rem;
     }
     
-    .page-header p {
-        color: #7f8c8d;
+    .nav-pills .nav-link:hover, .nav-pills .nav-link.active {
+        background: rgba(255, 215, 0, 0.1);
+        color: var(--primary-accent);
     }
     
-    .bookings-list {
-        display: grid;
-        gap: 1.5rem;
+    .nav-pills .nav-link i {
+        width: 25px;
+        text-align: center;
+        margin-right: 10px;
+    }
+    
+    /* Content Area */
+    .dashboard-content {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 2rem;
+        border: 1px solid var(--border-color);
     }
     
     .booking-card {
-        background: #fff;
+        background: var(--bg-deep);
         border-radius: 10px;
-        padding: 2rem;
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 2rem;
-        align-items: center;
-        transition: transform 0.3s, box-shadow 0.3s;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s;
     }
     
     .booking-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        border-color: var(--primary-accent);
     }
     
-    .booking-poster {
-        width: 120px;
-        height: 160px;
-        background: #ecf0f1;
-        border-radius: 8px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .booking-poster img {
-        width: 100%;
-        height: 100%;
+    .poster-thumb {
+        width: 80px;
+        border-radius: 5px;
         object-fit: cover;
     }
     
-    .booking-info {
-        display: grid;
-        gap: 0.8rem;
-    }
-    
-    .movie-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-    
-    .booking-detail {
-        color: #7f8c8d;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.95rem;
-    }
-    
-    .booking-detail strong {
-        color: #3498db;
-        min-width: 100px;
-    }
-    
-    .seats-display {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-    }
-    
-    .seat-tag {
-        background: #ecf0f1;
-        padding: 0.3rem 0.8rem;
-        border-radius: 5px;
-        font-size: 0.9rem;
-        color: #3498db;
-        font-weight: 600;
-        border: 1px solid #3498db;
-    }
-    
-    .booking-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-end;
-    }
-    
     .status-badge {
-        padding: 0.5rem 1.5rem;
+        padding: 0.4rem 1rem;
         border-radius: 20px;
+        font-size: 0.8rem;
         font-weight: 600;
-        font-size: 0.9rem;
+        text-transform: uppercase;
     }
     
-    .status-confirmed {
-        background: #27ae60;
+    .status-confirmed { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+    .status-pending { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+    .status-cancelled { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+    
+    /* Input Styles for Profile Form */
+    .profile-input {
+        background: var(--bg-deep);
+        border: 1px solid var(--border-color);
         color: #fff;
+        padding: 0.8rem;
     }
     
-    .status-pending {
-        background: #f39c12;
+    .profile-input:focus {
+        background: var(--bg-deep);
+        border-color: var(--primary-accent);
         color: #fff;
-    }
-    
-    .status-cancelled {
-        background: #e74c3c;
-        color: #fff;
-    }
-    
-    .amount-display {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #e74c3c;
-    }
-    
-    .booking-reference {
-        font-size: 0.9rem;
-        color: #7f8c8d;
-        margin-top: 0.5rem;
-    }
-    
-    .no-bookings {
-        text-align: center;
-        padding: 4rem 2rem;
-        background: #fff;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .no-bookings h2 {
-        color: #3498db;
-        margin-bottom: 1rem;
-    }
-    
-    .no-bookings p {
-        color: #7f8c8d;
-        margin-bottom: 2rem;
-    }
-    
-    .btn-view {
-        padding: 0.6rem 1.2rem;
-        background: #fff;
-        border: 2px solid #3498db;
-        color: #3498db;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 0.9rem;
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    .btn-view:hover {
-        background: #3498db;
-        color: #fff;
-    }
-    
-    /* NEW STYLES FOR CANCELLATION */
-    .btn-cancel {
-        padding: 0.6rem 1.2rem;
-        background: #fff;
-        border: 2px solid #e74c3c;
-        color: #e74c3c;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 0.9rem;
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    .btn-cancel:hover {
-        background: #e74c3c;
-        color: #fff;
-    }
-    
-    .cancellation-alert {
-        padding: 0.8rem 1rem;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        margin-top: 0.5rem;
-        border-left: 4px solid;
-    }
-    
-    .alert-warning {
-        background: #fff3cd;
-        border-color: #f39c12;
-        color: #856404;
-    }
-    
-    .alert-success {
-        background: #d4edda;
-        border-color: #27ae60;
-        color: #155724;
-    }
-    
-    .alert-danger {
-        background: #f8d7da;
-        border-color: #e74c3c;
-        color: #721c24;
-    }
-    
-    .btn-browse {
-        padding: 1rem 2rem;
-        background: #3498db;
-        border: none;
-        color: #fff;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 1rem;
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    @media (max-width: 768px) {
-        .booking-card {
-            grid-template-columns: 1fr;
-        }
-        
-        .booking-actions {
-            align-items: flex-start;
-        }
+        box-shadow: none;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-    <div class="page-header">
-        <h1>🎫 My Bookings</h1>
-        <p>View and manage your movie ticket bookings</p>
-    </div>
-    
-    {% if bookings %}
-    <div class="bookings-list">
-        {% for booking in bookings %}
-        <div class="booking-card">
-            <div class="booking-poster">
-                {% if booking.showtime.movie.poster %}
-                    <img src="{{ booking.showtime.movie.poster.url }}" alt="{{ booking.showtime.movie.title }}">
-                {% else %}
-                    <span style="font-size: 3rem; color: #bdc3c7;">🎬</span>
-                {% endif %}
-            </div>
-            
-            <div class="booking-info">
-                <div class="movie-title">{{ booking.showtime.movie.title }}</div>
-                
-                <div class="booking-detail">
-                    <strong>📍 Cinema:</strong>
-                    <span>{{ booking.showtime.screen.cinema.name }} - {{ booking.showtime.screen.name }}</span>
+<div class="container dashboard-container">
+    <div class="row g-4">
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="profile-sidebar animate__animated animate__fadeInLeft">
+                <div class="profile-avatar">
+                    {{ user.username|make_list|first|upper }}
                 </div>
+                <h5 class="fw-bold mb-1">{{ user.first_name }} {{ user.last_name }}</h5>
+                <p class="text-muted small mb-4">{{ user.email }}</p>
                 
-                <div class="booking-detail">
-                    <strong>📅 Date & Time:</strong>
-                    <span>{{ booking.showtime.start_time|date:"F d, Y - h:i A" }}</span>
-                </div>
-                
-                <div class="booking-detail">
-                    <strong>🪑 Seats:</strong>
-                    <div class="seats-display">
-                        {% for seat in booking.seats.all %}
-                        <span class="seat-tag">{{ seat.row }}{{ seat.number }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <div class="booking-reference">
-                    Booking Reference: <strong style="color: #3498db;">{{ booking.booking_reference }}</strong>
-                </div>
-                
-                <!-- CANCELLATION STATUS ALERTS - NEW -->
-                {% if booking.cancellation_request %}
-                <div style="margin-top: 1rem;">
-                    {% if booking.cancellation_request.status == 'Pending' %}
-                    <div class="cancellation-alert alert-warning">
-                        <strong>⏳ Cancellation Pending:</strong> Waiting for admin approval
-                    </div>
-                    {% elif booking.cancellation_request.status == 'Approved' %}
-                    <div class="cancellation-alert alert-success">
-                        <strong>✅ Cancellation Approved:</strong> 
-                        Refund of Rs. {{ booking.cancellation_request.refund_amount }} will be processed
-                    </div>
-                    {% elif booking.cancellation_request.status == 'Rejected' %}
-                    <div class="cancellation-alert alert-danger">
-                        <strong>❌ Cancellation Rejected</strong>
-                        {% if booking.cancellation_request.admin_response %}
-                            <br>{{ booking.cancellation_request.admin_response }}
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="booking-actions">
-                <span class="status-badge status-{{ booking.status|lower }}">
-                    {{ booking.status }}
-                </span>
-                <div class="amount-display">
-                    Rs. {{ booking.total_amount }}
-                </div>
-                <a href="{% url 'booking_confirmation' booking.id %}" class="btn-view">
-                    <i class="far fa-eye"></i> View Details
-                </a>
-                
-                <!-- COMPLETE PAYMENT BUTTON FOR PENDING -->
-                {% if booking.status == 'Pending' %}
-                <a href="{% url 'payment_page' booking.id %}" class="btn-view" style="border-color: #27ae60; color: #27ae60;">
-                    <i class="fas fa-credit-card"></i> Pay Now
-                </a>
-                {% endif %}
-                
-                <!-- CANCELLATION BUTTON -->
-                {% if booking.status == 'Confirmed' and booking.can_request_cancellation %}
-                    {% if not booking.cancellation_request or booking.cancellation_request.status == 'Rejected' %}
-                    <a href="{% url 'request_cancellation' booking.id %}" class="btn-cancel">
-                        <i class="fas fa-ban"></i> Cancel Booking
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                    <button class="nav-link active" id="v-pills-bookings-tab" data-bs-toggle="pill" data-bs-target="#v-pills-bookings" type="button" role="tab">
+                        <i class="fas fa-ticket-alt"></i> My Bookings
+                    </button>
+                    <button class="nav-link" id="v-pills-profile-tab" data-bs-toggle="pill" data-bs-target="#v-pills-profile" type="button" role="tab">
+                        <i class="fas fa-user-cog"></i> Profile Settings
+                    </button>
+                    <button class="nav-link" id="v-pills-payment-tab" data-bs-toggle="pill" data-bs-target="#v-pills-payment" type="button" role="tab">
+                        <i class="fas fa-credit-card"></i> Payment Methods
+                    </button>
+                    <a href="{% url 'logout' %}" class="nav-link text-danger mt-3">
+                        <i class="fas fa-sign-out-alt"></i> Logout
                     </a>
-                    {% endif %}
-                {% endif %}
-                {% if booking.status == 'Pending' %}
-                <a href="{% url 'payment_page' booking.id %}" class="btn-view" style="border-color: #27ae60; color: #27ae60;">
-                    💳 Complete Payment
-                </a>
-                {% endif %}
+                </div>
             </div>
         </div>
-        {% endfor %}
+        
+        <!-- Content -->
+        <div class="col-lg-9">
+            <div class="tab-content" id="v-pills-tabContent">
+                
+                <!-- Bookings Tab -->
+                <div class="tab-pane fade show active animate__animated animate__fadeInUp" id="v-pills-bookings" role="tabpanel">
+                    <div class="dashboard-content">
+                        <h4 class="mb-4 fw-bold border-bottom border-secondary pb-3">Ticket History</h4>
+                        
+                        {% if bookings %}
+                            {% for booking in bookings %}
+                            <div class="booking-card">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2 text-center">
+                                        {% if booking.showtime.movie.poster %}
+                                            <img src="{{ booking.showtime.movie.poster.url }}" class="poster-thumb shadow" alt="{{ booking.showtime.movie.title }}">
+                                        {% else %}
+                                            <div class="bg-secondary poster-thumb d-flex align-items-center justify-content-center" style="height: 120px;">
+                                                <i class="fas fa-film"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-7">
+                                        <h5 class="fw-bold mb-1">{{ booking.showtime.movie.title }}</h5>
+                                        <div class="d-flex gap-3 text-muted small mb-2">
+                                            <span><i class="fas fa-calendar me-1"></i> {{ booking.showtime.start_time|date:"M d, Y" }}</span>
+                                            <span><i class="fas fa-clock me-1"></i> {{ booking.showtime.start_time|date:"h:i A" }}</span>
+                                        </div>
+                                        <div class="d-flex gap-3 text-muted small">
+                                            <span><i class="fas fa-map-marker-alt me-1"></i> {{ booking.showtime.screen.cinema.name }}</span>
+                                        </div>
+                                        
+                                        <!-- Status Logic -->
+                                        <div class="mt-2">
+                                            <span class="status-badge status-{{ booking.status|lower }}">{{ booking.status }}</span>
+                                            <span class="ms-2 small text-muted">Ref: {{ booking.booking_reference }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-3 text-end">
+                                        <div class="mb-2 fw-bold text-primary">Rs. {{ booking.total_amount }}</div>
+                                        <div class="d-grid gap-2">
+                                            <a href="{% url 'booking_confirmation' booking.id %}" class="btn btn-sm btn-outline-light rounded-pill">View Ticket</a>
+                                            {% if booking.status == 'Confirmed' %}
+                                                <button class="btn btn-sm btn-outline-danger rounded-pill" disabled title="Cancellation unavailable in demo">Cancel</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-ticket-alt fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">No bookings found</h5>
+                                <a href="{% url 'home' %}" class="btn btn-primary mt-3 rounded-pill">Book a Movie</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Profile Tab -->
+                <div class="tab-pane fade animate__animated animate__fadeInUp" id="v-pills-profile" role="tabpanel">
+                    <div class="dashboard-content">
+                        <h4 class="mb-4 fw-bold border-bottom border-secondary pb-3">Edit Profile</h4>
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">First Name</label>
+                                    <input type="text" class="form-control profile-input" value="{{ user.first_name }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">Last Name</label>
+                                    <input type="text" class="form-control profile-input" value="{{ user.last_name }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-muted">Email</label>
+                                    <input type="email" class="form-control profile-input" value="{{ user.email }}" readonly>
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button class="btn btn-primary rounded-pill px-4">Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Payment Tab -->
+                <div class="tab-pane fade animate__animated animate__fadeInUp" id="v-pills-payment" role="tabpanel">
+                    <div class="dashboard-content">
+                        <h4 class="mb-4 fw-bold border-bottom border-secondary pb-3">Payment Methods</h4>
+                        <div class="text-center py-5">
+                            <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No saved payment methods.</p>
+                            <button class="btn btn-outline-primary rounded-pill">Add New Card</button>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
     </div>
-    {% else %}
-    <div class="no-bookings">
-        <h2>No Bookings Yet</h2>
-        <p>You haven't made any movie bookings. Start exploring movies and book your tickets!</p>
-        <a href="{% url 'movies' %}" class="btn-browse">
-            Browse Movies
-        </a>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

@@ -1,288 +1,243 @@
-{% extends 'booking/base.html' %} {% block title %}Booking Confirmed - QFX
-Cinemas{% endblock %} {% block extra_css %}
+{% block extra_css %}
 <style>
-  .confirmation-container {
-    max-width: 800px;
-    margin: 3rem auto;
-    padding: 2rem;
-  }
-
-  .success-icon {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
-  .success-icon .checkmark {
-    width: 100px;
-    height: 100px;
-    background: #4caf50;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    animation: scaleIn 0.5s ease;
-  }
-
-  @keyframes scaleIn {
-    from {
-      transform: scale(0);
+    .confirmation-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        perspective: 1000px;
     }
-    to {
-      transform: scale(1);
+    
+    .ticket-visual {
+        background: #fff;
+        width: 100%;
+        max-width: 400px;
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        transform-style: preserve-3d;
+        animation: cardFloat 3s ease-in-out infinite alternate;
+        color: #1a1a1a;
     }
-  }
-
-  .confirmation-box {
-    background: #1a1f26;
-    border-radius: 10px;
-    padding: 2rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  }
-
-  .booking-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
-    border-bottom: 2px solid #2c3138;
-  }
-
-  .booking-header h1 {
-    color: #00bcd4;
-    margin-bottom: 0.5rem;
-  }
-
-  .booking-reference {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #00bcd4;
-    margin-top: 1rem;
-  }
-
-  .booking-details {
-    display: grid;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .detail-section {
-    background: #0f1419;
-    padding: 1.5rem;
-    border-radius: 8px;
-  }
-
-  .detail-label {
-    color: #b0b3b8;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .detail-value {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #fff;
-  }
-
-  .seats-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-  }
-
-  .seat-badge {
-    background: #00bcd4;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    font-weight: 600;
-  }
-
-  .total-section {
-    background: #00bcd4;
-    padding: 1.5rem;
-    border-radius: 8px;
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
-  .total-label {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .total-amount {
-    font-size: 2rem;
-    font-weight: bold;
-  }
-
-  .action-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-  }
-
-  .btn-download,
-  .btn-home {
-    padding: 1rem 2rem;
-    font-size: 1rem;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
-  }
-
-  .btn-download {
-    background: #2c3138;
-    color: #fff;
-    border: 2px solid #00bcd4;
-  }
-
-  .btn-download:hover {
-    background: #00bcd4;
-  }
-
-  .btn-home {
-    background: #00bcd4;
-    color: #fff;
-    border: 2px solid #00bcd4;
-  }
-
-  .btn-home:hover {
-    background: #00a5bb;
-  }
-
-  .info-message {
-    background: #2c3138;
-    padding: 1rem;
-    border-radius: 5px;
-    text-align: center;
-    color: #b0b3b8;
-    margin-top: 2rem;
-  }
+    
+    @keyframes cardFloat {
+        0% { transform: translateY(0) rotateX(0); }
+        100% { transform: translateY(-10px) rotateX(2deg); }
+    }
+    
+    .ticket-header {
+        background: url('{{ booking.showtime.movie.poster.url }}') center/cover;
+        height: 150px;
+        position: relative;
+    }
+    
+    .ticket-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+    }
+    
+    .ticket-body {
+        padding: 2rem;
+        text-align: center;
+        background: #fff;
+        position: relative;
+    }
+    
+    /* Notches */
+    .ticket-body::before, .ticket-body::after {
+        content: '';
+        position: absolute;
+        top: -10px;
+        width: 20px;
+        height: 20px;
+        background: var(--bg-deep); /* Match body bg */
+        border-radius: 50%;
+        z-index: 10;
+    }
+    
+    .ticket-body::before { left: -10px; }
+    .ticket-body::after { right: -10px; }
+    
+    .booking-ref {
+        font-family: monospace;
+        letter-spacing: 2px;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+    
+    .movie-title {
+        font-family: var(--font-heading);
+        font-weight: 800;
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin: 2rem 0;
+        text-align: left;
+    }
+    
+    .info-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #666;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #000;
+    }
+    
+    .ticket-footer {
+        border-top: 2px dashed #ddd;
+        padding: 1.5rem;
+        text-align: center;
+        background: #f8f9fa;
+    }
+    
+    .qr-code-placeholder {
+        width: 120px;
+        height: 120px;
+        background: #000;
+        margin: 0 auto 1rem;
+        border-radius: 8px;
+    }
+    
+    .success-actions {
+        margin-top: 3rem;
+        text-align: center;
+    }
+    
+    /* Confetti Canvas */
+    #confetti-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+    }
 </style>
-{% endblock %} {% block content %}
-<div class="confirmation-container">
-  <div class="success-icon">
-    <div class="checkmark">✓</div>
-    <div class="checkmark"><i class="fas fa-check"></i></div>
-  </div>
+{% endblock %}
 
-  <div class="confirmation-box">
-    <div class="booking-header">
-      <h1>Booking Confirmed!</h1>
-      <p class="text-muted">Your tickets have been successfully booked</p>
-      <div class="booking-reference">
-        Ref: {{ booking.booking_reference }}
-      </div>
-    </div>
+{% block content %}
+<canvas id="confetti-canvas"></canvas>
 
-    <div class="booking-details">
-      <div class="detail-section">
-        <div class="detail-label">Movie</div>
-        <div class="detail-value">{{ booking.showtime.movie.title }}</div>
-      </div>
-
-      <div class="detail-section">
-        <div class="detail-label">Cinema</div>
-        <div class="detail-value">
-          {{ booking.showtime.screen.cinema.name }}<br />
-          <span style="font-size: 0.9rem; color: #b0b3b8">
-            {{ booking.showtime.screen.cinema.location }}
-          </span>
+<div class="confirmation-wrapper">
+    <div class="d-flex flex-column align-items-center">
+        <!-- Ticket Card -->
+        <div class="ticket-visual animate__animated animate__zoomIn">
+            <div class="ticket-header">
+                <!-- Poster Background -->
+            </div>
+            
+            <div class="ticket-body">
+                <div class="booking-ref">REF: {{ booking.booking_reference }}</div>
+                <h2 class="movie-title">{{ booking.showtime.movie.title }}</h2>
+                <div class="badge bg-warning text-dark mb-3">{{ booking.showtime.movie.certificate|default:"PG-13" }}</div>
+                
+                <div class="info-grid">
+                    <div>
+                        <div class="info-label">Date</div>
+                        <div class="info-value">{{ booking.showtime.start_time|date:"D, M d" }}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Time</div>
+                        <div class="info-value">{{ booking.showtime.start_time|date:"H:i" }}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Cinema</div>
+                        <div class="info-value">{{ booking.showtime.screen.cinema.name }}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Screen</div>
+                        <div class="info-value">{{ booking.showtime.screen.name }}</div>
+                    </div>
+                    <div class="grid-column-span-2" style="grid-column: span 2;">
+                        <div class="info-label">Seats</div>
+                        <div class="info-value text-primary">
+                            {% for seat in booking.seats.all %}
+                                {{ seat.row }}{{ seat.number }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ticket-footer">
+                {% if qr_code %}
+                    <img src="data:image/png;base64,{{ qr_code }}" class="qr-code-placeholder img-fluid" alt="QR">
+                {% else %}
+                    <!-- QR Placeholder if generic -->
+                    <div class="qr-code-placeholder d-flex align-items-center justify-content-center text-white">
+                        <i class="fas fa-qrcode fa-3x"></i>
+                    </div>
+                {% endif %}
+                <small class="text-muted d-block">Scan at entrance</small>
+            </div>
         </div>
-      </div>
-
-      <div class="detail-section">
-        <div class="detail-label">Screen</div>
-        <div class="detail-value">{{ booking.showtime.screen.name }}</div>
-      </div>
-
-      <div class="detail-section">
-        <div class="detail-label">Date & Time</div>
-        <div class="detail-value">
-          {{ booking.showtime.start_time|date:"F d, Y" }}<br />
-          <span style="font-size: 1rem; color: #00bcd4">
-            {{ booking.showtime.start_time|date:"h:i A" }}
-          </span>
+        
+        <!-- Actions -->
+        <div class="success-actions animate__animated animate__fadeInUp animate__delay-1s">
+            <h3 class="fw-bold mb-2">You're All Set!</h3>
+            <p class="text-muted mb-4">A confirmation email has been sent to {{ request.user.email }}</p>
+            
+            <div class="d-flex gap-3">
+                <button class="btn btn-outline-light rounded-pill px-4" onclick="window.print()">
+                    <i class="fas fa-download me-2"></i> Download
+                </button>
+                <a href="{% url 'home' %}" class="btn btn-primary rounded-pill px-4">
+                    Back to Home
+                </a>
+            </div>
         </div>
-      </div>
-
-      <div class="detail-section">
-        <div class="detail-label">Selected Seats</div>
-        <div class="seats-list">
-          {% for seat in booking.seats.all %}
-          <span class="seat-badge">{{ seat.row }}{{ seat.number }}</span>
-          {% endfor %}
-        </div>
-      </div>
     </div>
-
-    <div class="total-section">
-      <div class="total-label">Total Amount Paid</div>
-      <div class="total-amount">Rs. {{ booking.total_amount }}</div>
-    </div>
-
-    {% if qr_code %}
-    <div class="text-center mb-4">
-      <p class="mb-2"><strong>Scan for entry</strong></p>
-      <img
-        src="data:image/png;base64,{{ qr_code }}"
-        alt="Booking QR Code"
-        style="
-          width: 150px;
-          height: 150px;
-          border: 4px solid white;
-          border-radius: 8px;
-        "
-      />
-    </div>
-    {% endif %}
-
-    <div class="action-buttons">
-      <a
-        href="#"
-        onclick="
-          window.print();
-          return false;
-        "
-        class="btn-download"
-      >
-        📥 Download Ticket
-      </a>
-      <a href="{% url 'home' %}" class="btn-home"> 🏠 Back to Home </a>
-    </div>
-
-    <div class="info-message">
-      ℹ️ Please arrive at the cinema at least 15 minutes before showtime.<br />
-      Present this booking reference at the counter to collect your tickets.
-    </div>
-  </div>
 </div>
 
-<style>
-  @media print {
-    .navbar,
-    .footer,
-    .action-buttons,
-    .info-message {
-      display: none !important;
-    }
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Confetti Explosion
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-    body {
-      background: white;
-      color: black;
-    }
+        function random(min, max) {
+          return Math.random() * (max - min) + min;
+        }
 
-    .confirmation-box {
-      box-shadow: none;
-      background: white;
-    }
+        const interval = setInterval(function() {
+          const timeLeft = animationEnd - Date.now();
 
-    .detail-section {
-      background: #f5f5f5;
-    }
-  }
-</style>
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+          
+          confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } }));
+          confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+        
+        // Single burst
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    });
+</script>
 {% endblock %}

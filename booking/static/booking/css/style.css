@@ -1,0 +1,188 @@
+/* Global Design System - Ticket Sathi */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@400;500;600;700;800&display=swap");
+
+:root {
+  /* Color Palette */
+  --bg-deep: #1a1a1a;
+  --bg-card: #2c2c2c;
+  --bg-glass: rgba(44, 44, 44, 0.7);
+  --bg-hover: #3d3d3d;
+
+  /* Accents */
+  --primary-accent: #ffd700; /* Ticket Gold */
+  --primary-hover: #e6c200;
+  --secondary-accent: #e50914; /* Cinema Red */
+
+  /* Text */
+  --text-primary: #eeeeee; /* Off-white */
+  --text-secondary: #cccccc; /* Light Gray */
+  --text-muted: #9ca3af;
+
+  /* Borders */
+  --border-color: #404040;
+  --border-radius: 12px;
+
+  /* Fonts */
+  --font-heading: "Montserrat", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.navbar-brand,
+.btn,
+.nav-link {
+  font-family: var(--font-heading);
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: rgba(44, 44, 44, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Navbar */
+.navbar {
+  background-color: rgba(26, 26, 26, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 0;
+}
+
+.navbar-brand {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--primary-accent) !important;
+  letter-spacing: -0.5px;
+}
+
+.nav-link {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--primary-accent) !important;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: #000; /* Contrast for Gold */
+  padding: 0.6rem 1.8rem;
+  font-weight: 700;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-outline-light {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.btn-outline-light:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+/* Cards */
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Footer */
+.footer {
+  background-color: #111;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.footer h5 {
+  color: var(--text-primary);
+}
+
+.footer a:hover {
+  color: var(--primary-accent);
+}
+
+/* Inputs */
+.form-control,
+.form-select {
+  background-color: #222;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #222;
+  border-color: var(--primary-accent);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+}
+
+.form-floating > label {
+  color: var(--text-muted);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}

@@ -26,4 +26,9 @@ urlpatterns = [
     
     # Payment Callback
     path('payment/callback/<str:provider_id>/', views.payment_callback, name='payment_callback'),
+    
+    # Custom Admin Dashboard
+    path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('dashboard/approve-cancellation/<int:request_id>/', views.approve_cancellation, name='approve_cancellation'),
+    path('dashboard/reject-cancellation/<int:request_id>/', views.reject_cancellation, name='reject_cancellation'),
 ]
