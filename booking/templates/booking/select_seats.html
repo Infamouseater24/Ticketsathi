@@ -63,7 +63,7 @@
     .seat {
         width: 45px;
         height: 45px;
-        background: #2c3138;
+        background: #4caf50;
         border-radius: 5px 5px 0 0;
         cursor: pointer;
         display: flex;
@@ -165,7 +165,7 @@
         <div id="hiddenCheckboxes"></div>
 
         <div class="legend">
-            <div><span class="legend-box" style="background:#2c3138;"></span>Available</div>
+            <div><span class="legend-box" style="background:#4caf50;"></span>Available</div>
             <div><span class="legend-box" style="background:#00bcd4;"></span>Selected</div>
             <div><span class="legend-box" style="background:#f44336;"></span>Booked</div>
         </div>
@@ -211,7 +211,6 @@ function updateUI() {
 seats.forEach(seat => {
     seat.addEventListener('click', () => {
         if (seat.dataset.booked === 'true') {
-            alert('This seat is already booked!');
             return;
         }
 

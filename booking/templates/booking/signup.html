@@ -1,6 +1,6 @@
 {% extends 'booking/base.html' %}
 
-{% block title %}Sign Up - ASA Cinemas{% endblock %}
+{% block title %}Sign Up - Ticket Sathi{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -13,18 +13,32 @@
     }
     
     .auth-box {
-        background: #1a1f26;
+        background: var(--bg-card);
         padding: 3rem;
-        border-radius: 10px;
+        border-radius: 16px;
         width: 100%;
-        max-width: 600px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        max-width: 550px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Glow Effect */
+    .auth-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--primary-accent), transparent);
     }
     
     .auth-tabs {
         display: flex;
-        margin-bottom: 2rem;
-        border-bottom: 2px solid #2c3138;
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid var(--border-color);
     }
     
     .auth-tab {
@@ -32,21 +46,21 @@
         padding: 1rem;
         text-align: center;
         cursor: pointer;
-        color: #b0b3b8;
+        color: var(--text-secondary);
         font-weight: 600;
-        border-bottom: 3px solid transparent;
+        border-bottom: 2px solid transparent;
         transition: all 0.3s;
         text-decoration: none;
-        display: block;
+        letter-spacing: 0.5px;
     }
     
     .auth-tab:hover {
-        color: #00bcd4;
+        color: var(--primary-accent);
     }
     
     .auth-tab.active {
-        color: #00bcd4;
-        border-bottom-color: #00bcd4;
+        color: var(--primary-accent);
+        border-bottom-color: var(--primary-accent);
     }
     
     .form-row {
@@ -62,54 +76,72 @@
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #b0b3b8;
+        color: var(--text-secondary);
         font-weight: 500;
+        font-size: 0.9rem;
     }
     
     .form-control {
         width: 100%;
-        padding: 0.9rem;
-        background: #2c3138;
-        border: 2px solid #3a3f47;
-        border-radius: 5px;
-        color: #fff;
+        padding: 0.9rem 1rem;
+        background: var(--bg-deep);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
         font-size: 1rem;
-        transition: border-color 0.3s;
+        transition: all 0.3s;
     }
     
     .form-control:focus {
         outline: none;
-        border-color: #00bcd4;
+        border-color: var(--primary-accent);
+        box-shadow: 0 0 0 3px rgba(212, 27, 58, 0.1);
     }
     
     .form-control::placeholder {
-        color: #6c757d;
+        color: var(--text-muted);
     }
     
     .btn-auth {
         width: 100%;
         padding: 1rem;
-        font-size: 1.1rem;
+        font-size: 1rem;
+        font-weight: 600;
         margin-top: 1rem;
+        background: var(--primary-accent);
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .btn-auth:hover {
+        background: var(--primary-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(212, 27, 58, 0.3);
     }
     
     .errorlist {
         list-style: none;
-        color: #f44336;
-        font-size: 0.9rem;
+        color: #ff6b6b;
+        font-size: 0.85rem;
         margin-top: 0.5rem;
+        padding: 0;
     }
     
     .helptext {
-        font-size: 0.85rem;
-        color: #6c757d;
+        font-size: 0.8rem;
+        color: var(--text-muted);
         margin-top: 0.3rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="auth-container">
+<div class="auth-container animate__animated animate__fadeIn">
     <div class="auth-box">
         <div class="auth-tabs">
             <a href="{% url 'login' %}" class="auth-tab">SIGN IN</a>

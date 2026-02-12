@@ -1,268 +1,288 @@
-{% extends 'booking/base.html' %}
-
-{% block title %}Booking Confirmed - QFX Cinemas{% endblock %}
-
-{% block extra_css %}
+{% extends 'booking/base.html' %} {% block title %}Booking Confirmed - QFX
+Cinemas{% endblock %} {% block extra_css %}
 <style>
-    .confirmation-container {
-        max-width: 800px;
-        margin: 3rem auto;
-        padding: 2rem;
-    }
-    
-    .success-icon {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .success-icon .checkmark {
-        width: 100px;
-        height: 100px;
-        background: #4caf50;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3rem;
-        animation: scaleIn 0.5s ease;
-    }
-    
-    @keyframes scaleIn {
-        from {
-            transform: scale(0);
-        }
-        to {
-            transform: scale(1);
-        }
-    }
-    
-    .confirmation-box {
-        background: #1a1f26;
-        border-radius: 10px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    }
-    
-    .booking-header {
-        text-align: center;
-        margin-bottom: 2rem;
-        padding-bottom: 2rem;
-        border-bottom: 2px solid #2c3138;
-    }
-    
-    .booking-header h1 {
-        color: #00bcd4;
-        margin-bottom: 0.5rem;
-    }
-    
-    .booking-reference {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #00bcd4;
-        margin-top: 1rem;
-    }
-    
-    .booking-details {
-        display: grid;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
-    .detail-section {
-        background: #0f1419;
-        padding: 1.5rem;
-        border-radius: 8px;
-    }
-    
-    .detail-label {
-        color: #b0b3b8;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .detail-value {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #fff;
-    }
-    
-    .seats-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-    }
-    
-    .seat-badge {
-        background: #00bcd4;
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        font-weight: 600;
-    }
-    
-    .total-section {
-        background: #00bcd4;
-        padding: 1.5rem;
-        border-radius: 8px;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .total-label {
-        font-size: 1rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .total-amount {
-        font-size: 2rem;
-        font-weight: bold;
-    }
-    
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-    }
-    
-    .btn-download,
-    .btn-home {
-        padding: 1rem 2rem;
-        font-size: 1rem;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s;
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    .btn-download {
-        background: #2c3138;
-        color: #fff;
-        border: 2px solid #00bcd4;
-    }
-    
-    .btn-download:hover {
-        background: #00bcd4;
-    }
-    
-    .btn-home {
-        background: #00bcd4;
-        color: #fff;
-        border: 2px solid #00bcd4;
-    }
-    
-    .btn-home:hover {
-        background: #00a5bb;
-    }
-    
-    .info-message {
-        background: #2c3138;
-        padding: 1rem;
-        border-radius: 5px;
-        text-align: center;
-        color: #b0b3b8;
-        margin-top: 2rem;
-    }
-</style>
-{% endblock %}
+  .confirmation-container {
+    max-width: 800px;
+    margin: 3rem auto;
+    padding: 2rem;
+  }
 
-{% block content %}
+  .success-icon {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .success-icon .checkmark {
+    width: 100px;
+    height: 100px;
+    background: #4caf50;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    animation: scaleIn 0.5s ease;
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .confirmation-box {
+    background: #1a1f26;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .booking-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #2c3138;
+  }
+
+  .booking-header h1 {
+    color: #00bcd4;
+    margin-bottom: 0.5rem;
+  }
+
+  .booking-reference {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #00bcd4;
+    margin-top: 1rem;
+  }
+
+  .booking-details {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .detail-section {
+    background: #0f1419;
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+
+  .detail-label {
+    color: #b0b3b8;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .detail-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .seats-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .seat-badge {
+    background: #00bcd4;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+
+  .total-section {
+    background: #00bcd4;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .total-label {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .total-amount {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn-download,
+  .btn-home {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-download {
+    background: #2c3138;
+    color: #fff;
+    border: 2px solid #00bcd4;
+  }
+
+  .btn-download:hover {
+    background: #00bcd4;
+  }
+
+  .btn-home {
+    background: #00bcd4;
+    color: #fff;
+    border: 2px solid #00bcd4;
+  }
+
+  .btn-home:hover {
+    background: #00a5bb;
+  }
+
+  .info-message {
+    background: #2c3138;
+    padding: 1rem;
+    border-radius: 5px;
+    text-align: center;
+    color: #b0b3b8;
+    margin-top: 2rem;
+  }
+</style>
+{% endblock %} {% block content %}
 <div class="confirmation-container">
-    <div class="success-icon">
-        <div class="checkmark">✓</div>
+  <div class="success-icon">
+    <div class="checkmark">✓</div>
+    <div class="checkmark"><i class="fas fa-check"></i></div>
+  </div>
+
+  <div class="confirmation-box">
+    <div class="booking-header">
+      <h1>Booking Confirmed!</h1>
+      <p class="text-muted">Your tickets have been successfully booked</p>
+      <div class="booking-reference">
+        Ref: {{ booking.booking_reference }}
+      </div>
     </div>
-    
-    <div class="confirmation-box">
-        <div class="booking-header">
-            <h1>Booking Confirmed!</h1>
-            <p style="color: #b0b3b8;">Your tickets have been successfully booked</p>
-            <div class="booking-reference">
-                Booking Reference: {{ booking.booking_reference }}
-            </div>
+
+    <div class="booking-details">
+      <div class="detail-section">
+        <div class="detail-label">Movie</div>
+        <div class="detail-value">{{ booking.showtime.movie.title }}</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label">Cinema</div>
+        <div class="detail-value">
+          {{ booking.showtime.screen.cinema.name }}<br />
+          <span style="font-size: 0.9rem; color: #b0b3b8">
+            {{ booking.showtime.screen.cinema.location }}
+          </span>
         </div>
-        
-        <div class="booking-details">
-            <div class="detail-section">
-                <div class="detail-label">Movie</div>
-                <div class="detail-value">{{ booking.showtime.movie.title }}</div>
-            </div>
-            
-            <div class="detail-section">
-                <div class="detail-label">Cinema</div>
-                <div class="detail-value">
-                    {{ booking.showtime.screen.cinema.name }}<br>
-                    <span style="font-size: 0.9rem; color: #b0b3b8;">
-                        {{ booking.showtime.screen.cinema.location }}
-                    </span>
-                </div>
-            </div>
-            
-            <div class="detail-section">
-                <div class="detail-label">Screen</div>
-                <div class="detail-value">{{ booking.showtime.screen.name }}</div>
-            </div>
-            
-            <div class="detail-section">
-                <div class="detail-label">Date & Time</div>
-                <div class="detail-value">
-                    {{ booking.showtime.start_time|date:"F d, Y" }}<br>
-                    <span style="font-size: 1rem; color: #00bcd4;">
-                        {{ booking.showtime.start_time|date:"h:i A" }}
-                    </span>
-                </div>
-            </div>
-            
-            <div class="detail-section">
-                <div class="detail-label">Selected Seats</div>
-                <div class="seats-list">
-                    {% for seat in booking.seats.all %}
-                    <span class="seat-badge">{{ seat.row }}{{ seat.number }}</span>
-                    {% endfor %}
-                </div>
-            </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label">Screen</div>
+        <div class="detail-value">{{ booking.showtime.screen.name }}</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label">Date & Time</div>
+        <div class="detail-value">
+          {{ booking.showtime.start_time|date:"F d, Y" }}<br />
+          <span style="font-size: 1rem; color: #00bcd4">
+            {{ booking.showtime.start_time|date:"h:i A" }}
+          </span>
         </div>
-        
-        <div class="total-section">
-            <div class="total-label">Total Amount Paid</div>
-            <div class="total-amount">Rs. {{ booking.total_amount }}</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label">Selected Seats</div>
+        <div class="seats-list">
+          {% for seat in booking.seats.all %}
+          <span class="seat-badge">{{ seat.row }}{{ seat.number }}</span>
+          {% endfor %}
         </div>
-        
-        <div class="action-buttons">
-            <a href="#" onclick="window.print(); return false;" class="btn-download">
-                📥 Download Ticket
-            </a>
-            <a href="{% url 'home' %}" class="btn-home">
-                🏠 Back to Home
-            </a>
-        </div>
-        
-        <div class="info-message">
-            ℹ️ Please arrive at the cinema at least 15 minutes before showtime.<br>
-            Present this booking reference at the counter to collect your tickets.
-        </div>
+      </div>
     </div>
+
+    <div class="total-section">
+      <div class="total-label">Total Amount Paid</div>
+      <div class="total-amount">Rs. {{ booking.total_amount }}</div>
+    </div>
+
+    {% if qr_code %}
+    <div class="text-center mb-4">
+      <p class="mb-2"><strong>Scan for entry</strong></p>
+      <img
+        src="data:image/png;base64,{{ qr_code }}"
+        alt="Booking QR Code"
+        style="
+          width: 150px;
+          height: 150px;
+          border: 4px solid white;
+          border-radius: 8px;
+        "
+      />
+    </div>
+    {% endif %}
+
+    <div class="action-buttons">
+      <a
+        href="#"
+        onclick="
+          window.print();
+          return false;
+        "
+        class="btn-download"
+      >
+        📥 Download Ticket
+      </a>
+      <a href="{% url 'home' %}" class="btn-home"> 🏠 Back to Home </a>
+    </div>
+
+    <div class="info-message">
+      ℹ️ Please arrive at the cinema at least 15 minutes before showtime.<br />
+      Present this booking reference at the counter to collect your tickets.
+    </div>
+  </div>
 </div>
 
 <style>
-    @media print {
-        .navbar, .footer, .action-buttons, .info-message {
-            display: none !important;
-        }
-        
-        body {
-            background: white;
-            color: black;
-        }
-        
-        .confirmation-box {
-            box-shadow: none;
-            background: white;
-        }
-        
-        .detail-section {
-            background: #f5f5f5;
-        }
+  @media print {
+    .navbar,
+    .footer,
+    .action-buttons,
+    .info-message {
+      display: none !important;
     }
+
+    body {
+      background: white;
+      color: black;
+    }
+
+    .confirmation-box {
+      box-shadow: none;
+      background: white;
+    }
+
+    .detail-section {
+      background: #f5f5f5;
+    }
+  }
 </style>
 {% endblock %}

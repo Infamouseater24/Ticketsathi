@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to Payment Provider...</title>
+</head>
+<body onload="document.forms[0].submit()">
+    <div style="text-align: center; margin-top: 20%; font-family: sans-serif;">
+        <p>Please wait, redirecting you to the payment provider...</p>
+        <img src="https://example.com/loading.gif" alt="Loading..." style="display:none;" />
+    </div>
+    <form action="{{ target_url }}" method="POST">
+        {% for key, value in form_fields.items %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endfor %}
+        <noscript>
+            <button type="submit">Click here if you are not redirected</button>
+        </noscript>
+    </form>
+</body>
+</html>

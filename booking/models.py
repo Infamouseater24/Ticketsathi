@@ -131,6 +131,10 @@ class Payment(models.Model):
     # Refund fields
     refund_date = models.DateTimeField(null=True, blank=True)
     refund_amount = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+
+    # Gateway fields
+    gateway_ref = models.CharField(max_length=100, blank=True, null=True, help_text="Reference ID from the payment gateway")
+    raw_response = models.JSONField(blank=True, null=True, help_text="Raw response from the payment gateway")
     
     def __str__(self):
         return f"Payment {self.transaction_id} - {self.booking.booking_reference}"

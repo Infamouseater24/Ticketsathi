@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ASA Cinemas{% endblock %}</title>
+    <title>{% block title %}Ticket Sathi{% endblock %}</title>
+    
+    <!-- Google Fonts: Montserrat & Open Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,57 +16,153 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        .product-card {
-            transition: transform 0.2s;
+        :root {
+            --bg-deep: #0b0f19;
+            --bg-card: #151a25;
+            --bg-hover: #1f2533;
+            --primary-accent: #d41b3a; /* Red/Pinkish */
+            --primary-hover: #b01730;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: #2d3748;
+            --gold: #fbbf24;
+            --font-heading: 'Montserrat', sans-serif;
+            --font-body: 'Open Sans', sans-serif;
         }
-        .product-card:hover {
-            transform: translateY(-5px);
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: var(--font-body);
         }
-        .badge-sale {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1;
+        
+        h1, h2, h3, h4, h5, h6, .navbar-brand, .btn, .nav-link {
+            font-family: var(--font-heading);
         }
-        .product-image {
-            height: 250px;
-            object-fit: cover;
+
+        /* Navbar */
+        .navbar {
+            background-color: rgba(11, 15, 25, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
         }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-accent) !important;
+        }
+
+        .nav-link {
+            color: var(--text-secondary) !important;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-primary) !important;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--primary-accent);
+            border-color: var(--primary-accent);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 27, 58, 0.3);
+        }
+
+        .btn-outline-light {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline-light:hover {
+            background-color: var(--bg-hover);
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Footer */
         .footer {
-            background-color: #f8f9fa;
-            margin-top: 50px;
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
         }
-        .price {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #dc3545 !important;
+
+        .footer h5 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
         }
-        .original-price {
-            font-size: 1rem;
-            color: #6c757d !important;
-            text-decoration: line-through !important;
+
+        .footer a {
+            color: var(--text-secondary);
+            transition: color 0.3s;
         }
-        .regular-price {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #0d6efd !important;
+
+        .footer a:hover {
+            color: var(--primary-accent);
         }
-        .movie-card {
-            transition: transform 0.2s;
-            cursor: pointer;
+
+        /* Utilities */
+        .text-muted {
+            color: var(--text-muted) !important;
         }
-        .movie-card:hover {
-            transform: translateY(-5px);
+        
+        /* Form Controls */
+        .form-control, .form-select {
+            background-color: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
-        .rating-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1;
+        
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-deep);
+            border-color: var(--primary-accent);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 2px rgba(212, 27, 58, 0.2);
         }
-        /* Sidebar spacing for aesthetic alignment */
-        .sidebar-filters {
-            margin-top: 1.5rem;
+
+        .dropdown-menu {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .dropdown-item {
+            color: var(--text-secondary);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        
+        .dropdown-divider {
+            border-top-color: var(--border-color);
         }
     </style>
     
@@ -69,10 +170,10 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
-                <i class="fas fa-film"></i> ASA Cinemas
+                <i class="fas fa-film"></i> Ticket Sathi
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -80,7 +181,7 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto ms-4">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'home' %}">Home</a>
                     </li>
@@ -90,44 +191,39 @@
                 </ul>
                 
                 <!-- Search Form -->
-                <form class="d-flex me-3" method="GET" action="{% url 'movies' %}">
-                    <input class="form-control me-2" type="search" name="search" placeholder="Search movies..." 
-                           value="{{ request.GET.search }}">
-                    <button class="btn btn-outline-light" type="submit">
-                        <i class="fas fa-search"></i>
-                    </button>
+                <form class="d-flex me-4 position-relative" method="GET" action="{% url 'movies' %}">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border-color);">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input class="form-control border-start-0 ps-0" type="search" name="search" placeholder="Search movies..." 
+                               value="{{ request.GET.search }}" style="border-color: var(--border-color);">
+                    </div>
                 </form>
                 
-                <ul class="navbar-nav">
-                    <!-- Bookings -->
-                    <li class="nav-item">
-                        <a class="nav-link position-relative" href="{% url 'my_bookings' %}">
-                            <i class="fas fa-ticket-alt"></i> My Bookings
-                        </a>
-                    </li>
-                    
-                    <!-- Account -->
+                <ul class="navbar-nav align-items-center">
                     {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> {{ user.username }}
+                        <li class="nav-item me-3">
+                            <a class="nav-link" href="{% url 'my_bookings' %}">
+                                <i class="fas fa-ticket-alt"></i> My Bookings
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{% url 'my_bookings' %}"><i class="fas fa-ticket-alt"></i> My Bookings</a></li>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle btn btn-outline-light border-0" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle fa-lg"></i> {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li><a class="dropdown-item" href="{% url 'my_bookings' %}"><i class="fas fa-ticket-alt me-2"></i> My Bookings</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Login
-                            </a>
+                        <li class="nav-item me-2">
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'signup' %}">
-                                <i class="fas fa-user-plus"></i> Register
-                            </a>
+                            <a class="btn btn-primary" href="{% url 'signup' %}">Sign Up</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -137,53 +233,62 @@
 
     <!-- Messages -->
     {% if messages %}
-        <div class="container mt-3">
+        <div class="container" style="margin-top: 100px;">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show bg-dark border-secondary text-white" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
     <!-- Main Content -->
-    <main class="container mt-4">
+    <main style="min-height: 80vh; padding-top: 100px;">
         {% block content %}
         {% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="footer mt-5 py-4">
+    <footer class="footer mt-5 py-5">
         <div class="container">
-            <div class="row">
-                <div class="col-md-3">
-                    <h5>ASA Cinemas</h5>
-                    <p>Your premium movie experience destination.</p>
+            <div class="row gy-4">
+                <div class="col-md-4">
+                    <h5 class="mb-3 text-white"><i class="fas fa-film me-2"></i>Ticket Sathi</h5>
+                    <p class="text-secondary">Experience movies like never before. Premium booking service for the best cinemas in town.</p>
+                    <div class="d-flex gap-3 mt-3">
+                        <a href="#"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#"><i class="fab fa-instagram fa-lg"></i></a>
+                    </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2 offset-md-1">
                     <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{% url 'movies' %}" class="text-decoration-none">Now Showing</a></li>
+                    <ul class="list-unstyled d-grid gap-2">
+                        <li><a href="{% url 'home' %}" class="text-decoration-none">Home</a></li>
+                        <li><a href="{% url 'movies' %}" class="text-decoration-none">Movies</a></li>
                         <li><a href="{% url 'my_bookings' %}" class="text-decoration-none">My Bookings</a></li>
                     </ul>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <h5>Support</h5>
-                    <ul class="list-unstyled">
+                    <ul class="list-unstyled d-grid gap-2">
                         <li><a href="#" class="text-decoration-none">Help Center</a></li>
-                        <li><a href="#" class="text-decoration-none">Contact Us</a></li>
-                        <li><a href="#" class="text-decoration-none">FAQs</a></li>
+                        <li><a href="#" class="text-decoration-none">Terms of Service</a></li>
+                        <li><a href="#" class="text-decoration-none">Privacy Policy</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
-                    <h5>Contact Info</h5>
-                    <p>Email: info@asacinemas.com<br>Phone: +977 9812345678</p>
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled d-grid gap-2">
+                        <li class="text-secondary"><i class="fas fa-envelope me-2"></i> info@ticketsathi.com</li>
+                        <li class="text-secondary"><i class="fas fa-phone me-2"></i> +977 1-4444444</li>
+                    </ul>
                 </div>
             </div>
-            <hr>
-            <div class="text-center">
-                <p>&copy; 2025 ASA Cinemas. All rights reserved.</p>
+            <hr class="my-4 border-secondary">
+            <div class="text-center text-secondary">
+                <p>&copy; 2025 Ticket Sathi. All rights reserved.</p>
             </div>
         </div>
     </footer>

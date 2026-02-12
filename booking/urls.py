@@ -21,7 +21,9 @@ urlpatterns = [
     path('booking-confirmation/<int:booking_id>/', views.booking_confirmation, name='booking_confirmation'),
     path('my-bookings/', views.my_bookings, name='my_bookings'),
     
-    # Cancellation - NEW ROUTES
     path('request-cancellation/<int:booking_id>/', views.request_cancellation, name='request_cancellation'),
     path('cancel-booking/<int:booking_id>/', views.cancel_booking, name='cancel_booking'),
+    
+    # Payment Callback
+    path('payment/callback/<str:provider_id>/', views.payment_callback, name='payment_callback'),
 ]

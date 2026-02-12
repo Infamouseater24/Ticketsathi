@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -12,6 +13,40 @@ import string
 # UPDATED IMPORT - Add CancellationRequest
 from .models import Movie, Cinema, Screen, Showtime, Seat, Booking, SeatBooking, Payment, CancellationRequest
 from .forms import SignUpForm, LoginForm
+
+# Payment SDK Imports
+from .payments import PaymentRequest, VerifyRequest, EsewaProvider, KhaltiProvider, FonepayProvider
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Initialize Providers (Sandbox Credentials)
+# In production, use os.getenv()
+esewa_provider = EsewaProvider(
+    secret_key="8gBm/:&EnhH.1/q", 
+    product_code="EPAYTEST", 
+    sandbox=True
+)
+
+# Placeholder for Khalti - In production use generic sandbox or user provided
+khalti_provider = KhaltiProvider(
+    secret_key="test_secret_key_from_dashboard", # User needs to provide this
+    website_url="http://localhost:8000",
+    sandbox=True
+)
+
+fonepay_provider = FonepayProvider(
+    merchant_code="NBQM",
+    secret_key="a7e3512f5032480a83137793cb2021dc",
+    sandbox=True
+)
+
+PROVIDERS = {
+    'esewa': esewa_provider,
+    'khalti': khalti_provider,
+    'fonepay': fonepay_provider,
+}
 
 def generate_booking_reference():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
@@ -216,7 +251,7 @@ def process_payment(request, booking_id):
             messages.error(request, 'Invalid payment method!')
             return redirect('payment_page', booking_id=booking.id)
         
-        # Process payment based on method
+        # CARD PAYMENT (Simulation)
         if payment_method == 'card':
             card_number = request.POST.get('card_number')
             cardholder_name = request.POST.get('cardholder_name')
@@ -238,24 +273,204 @@ def process_payment(request, booking_id):
                 card_number=card_number[-4:],
                 cardholder_name=cardholder_name
             )
-        else:
-            # For digital wallets
-            payment = Payment.objects.create(
-                booking=booking,
-                payment_method=payment_method,
-                amount=booking.total_amount,
-                transaction_id=generate_transaction_id(),
-                status='completed'
+            
+            # Update booking status to Confirmed
+            booking.status = 'Confirmed'
+            booking.save()
+            
+            messages.success(request, 'Payment successful! Your booking is confirmed.')
+            return redirect('booking_confirmation', booking_id=booking.id)
+
+        # WALLET PAYMENTS (Real SDK Integration)
+        provider = PROVIDERS.get(payment_method)
+        if not provider:
+             messages.error(request, 'Payment provider not configured.')
+             return redirect('payment_page', booking_id=booking.id)
+
+        # Generate Callback URL
+        # For localhost testing, we might need a workaround if providers can't reach localhost.
+        # But for redirect based (eSewa, Fonepay), localhost works for the browser redirect.
+        # For server-to-server (Khalti), it might be tricky but Khalti Initiate API just takes a return_url for user redirection.
+        
+        from django.urls import reverse
+        callback_url = request.build_absolute_uri(reverse('payment_callback', kwargs={'provider_id': payment_method}))
+        
+        # Initiate Payment
+        try:
+            payment_request = PaymentRequest(
+                amount=float(booking.total_amount),
+                order_id=booking.booking_reference,
+                description=f"Booking {booking.booking_reference}",
+                callback_url=callback_url,
+                customer_email=request.user.email,
+                customer_phone="" # Add phone if available in profile
             )
-        
-        # Update booking status to Confirmed
-        booking.status = 'Confirmed'
-        booking.save()
-        
-        messages.success(request, 'Payment successful! Your booking is confirmed.')
-        return redirect('booking_confirmation', booking_id=booking.id)
-    
+            
+            response = provider.initiate_payment(payment_request)
+            
+            # Save a pending payment record to track this attempt
+            # We use the order_id/transaction_id to match later
+            # Update or create to avoid duplicates on retry
+            Payment.objects.update_or_create(
+                booking=booking,
+                defaults={
+                    'payment_method': payment_method,
+                    'amount': booking.total_amount,
+                    'transaction_id': response.transaction_id or generate_transaction_id(), # Use provider's ID if available
+                    'status': 'pending',
+                }
+            )
+            
+            if response.is_form_post:
+                # Render a template that auto-submits the form
+                context = {
+                    'target_url': response.target_url,
+                    'form_fields': response.form_fields,
+                }
+                return render(request, 'booking/payment_redirect.html', context)
+            else:
+                # Direct redirect
+                if response.target_url:
+                    return redirect(response.target_url)
+                else:
+                     messages.error(request, 'Failed to get payment URL from provider.')
+                     return redirect('payment_page', booking_id=booking.id)
+                     
+        except Exception as e:
+            logger.error(f"Payment Initiation Error: {e}")
+            messages.error(request, f"Payment error: {str(e)}")
+            return redirect('payment_page', booking_id=booking.id)
+            
     return redirect('payment_page', booking_id=booking.id)
+
+@csrf_exempt
+def payment_callback(request, provider_id):
+    """
+    Handles callback from payment providers.
+    Note: @csrf_exempt is needed because some providers verify via POST from their server or client browser without CSRF token.
+    However, for standard browser redirects, CSRF might be fine if cookies are present.
+    Safest is `csrf_exempt` for the callback entry point.
+    """
+    provider = PROVIDERS.get(provider_id)
+    if not provider:
+        return HttpResponse("Invalid Provider", status=400)
+    
+    # Adapt Query Params / POST Data to VerifyRequest
+    # Start with GET params
+    data = request.GET.dict()
+    # Merge POST data if any (e.g. eSewa might POST, ConnectIPS POSTs)
+    if request.method == 'POST':
+        data.update(request.POST.dict())
+        
+    # We need to find the booking to get expected amount
+    # This is tricky because we need to parse the Order ID from the params BEFORE verification
+    # But usually verification needs expected amount.
+    
+    # Parsing logic depends on provider
+    order_id = None
+    if provider_id == 'esewa':
+        # eSewa: encoded 'data' contains transaction_uuid which starts with order_id
+        # We handle this inside verify or pre-parse?
+        # Actually EsewaProvider.verify_payment parses 'data'.
+        # We can pass specific params.
+        pass
+    elif provider_id == 'khalti':
+        # pidx is ref
+        pass
+    elif provider_id == 'fonepay':
+         order_id = data.get("PRN")
+
+    # To make it generic: verify_payment should optionally take expected params, 
+    # OR return the parsed ID so we can validate it.
+    # Our Interface: verify_payment(VerifyRequest) -> VerifyResponse
+    
+    # Let's try to verify without strict expectation first if possible, or fetch booking if we can extract ID.
+    # For eSewa, we can't easily extract ID without decoding.
+    # So `verify_payment` should do the decoding.
+    
+    verify_req = VerifyRequest(
+        encoded_params=data,
+        expected_amount=0, # Placeholder, will validate after
+        expected_order_id=""
+    )
+    
+    try:
+        result = provider.verify_payment(verify_req)
+        
+        if result.success:
+            # Now we have the gateway_ref / transaction_id (which might be our order_id)
+            # eSewa: gateway_ref = transaction_uuid = "ORDER-123-uuid"
+            # Fonepay: gateway_ref = "ORDER-123"
+            
+            # Find Booking
+            # Try to match booking_reference in the ID
+            try:
+                # We need to lookup by transaction_id if possible, or scan bookings.
+                # But safer: We generated the ID using booking_reference.
+                # eSewa: "REF-UUID"
+                # FonePay: "REF"
+                # Khalti: "REF" (purchase_order_id) - wait, Khalti verify returns pidx/transaction_id.
+                # Does it return purchase_order_id? Yes in `raw_response`.
+                
+                booking_ref = ""
+                if provider_id == 'esewa':
+                    # Extract from "REF-UUID"
+                     parts = result.gateway_ref.split('-')
+                     # Assuming booking ref doesn't have dashes... checking logic.
+                     # `generate_booking_reference` is random uppercase+digits. Safe.
+                     # But `uuid.hex[:6]` is appended. 
+                     # So it is "REF-HEX".
+                     booking_ref = result.gateway_ref.rsplit('-', 1)[0]
+                elif provider_id == 'khalti':
+                    booking_ref = result.raw_response.get("purchase_order_id")
+                elif provider_id == 'fonepay':
+                    booking_ref = result.gateway_ref
+                
+                booking = Booking.objects.get(booking_reference=booking_ref)
+                
+                # Check Amount
+                if float(booking.total_amount) != result.amount:
+                    logger.warning(f"Amount mismatch! Expected: {booking.total_amount}, Got: {result.amount}")
+                    messages.error(request, "Payment amount mismatch.")
+                    return redirect('home')
+
+                # Update Payment & Booking
+                # Find the payment record (we created it in initiate)
+                # It might have a different transaction_id (random one we made).
+                # We update it.
+                
+                # If payment record exists for this booking
+                Payment.objects.update_or_create(
+                     booking=booking,
+                     defaults={
+                         'status': 'completed',
+                         'transaction_id': result.transaction_id, # Provider's ID
+                         'gateway_ref': result.gateway_ref,
+                         'raw_response': result.raw_response,
+                         'payment_method': provider_id,
+                         'amount': booking.total_amount
+                     }
+                )
+                
+                booking.status = 'Confirmed'
+                booking.save()
+                
+                messages.success(request, f"Payment successful via {provider_id.title()}!")
+                return redirect('booking_confirmation', booking_id=booking.id)
+                
+            except Booking.DoesNotExist:
+                 logger.error(f"Booking not found for ref: {booking_ref}")
+                 return HttpResponse("Booking not found", status=404)
+        else:
+            messages.error(request, f"Payment failed: {result.status}")
+            return redirect('home')
+            
+    except Exception as e:
+        logger.error(f"Callback Error: {e}")
+        messages.error(request, "An error occurred during payment verification.")
+        return redirect('home')
+
+from .utils import generate_qr_code
 
 @login_required
 def booking_confirmation(request, booking_id):
@@ -268,9 +483,19 @@ def booking_confirmation(request, booking_id):
     except Payment.DoesNotExist:
         pass
     
+    # Generate QR Code Data
+    qr_data = f"Booking ID: {booking.booking_reference}\n"
+    qr_data += f"Movie: {booking.showtime.movie.title}\n"
+    qr_data += f"Time: {booking.showtime.start_time}\n"
+    qr_data += f"Seats: {', '.join([str(s) for s in booking.seats.all()])}\n"
+    qr_data += f"User: {booking.user.username}"
+    
+    qr_code = generate_qr_code(qr_data)
+    
     context = {
         'booking': booking,
         'payment': payment,
+        'qr_code': qr_code,
     }
     return render(request, 'booking/booking_confirmation.html', context)
 
