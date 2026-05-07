@@ -44,14 +44,7 @@ class EsewaProvider(PaymentProvider):
         
         signature_string = f"total_amount={amount_str},transaction_uuid={transaction_uuid},product_code={self.product_code}"
         
-        # WAIT! The error "Invalid payload signature" often means the server calculates a different signature 
-        # than what we sent. This happens if the STRING we start with is different.
-        # eSewa V2 documentation is notoriously inconsistent.
-        # Let's try the key-value pair format which is required by some endpoints.
-        
         signature = self._generate_signature(signature_string)
-        
-        print(f"DEBUG ESEWA: String='{signature_string}' Signature='{signature}' Secret='{self.secret_key}'")
 
         form_fields = {
             "amount": amount_str,

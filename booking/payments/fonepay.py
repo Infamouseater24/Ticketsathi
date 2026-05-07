@@ -81,25 +81,34 @@ class FonepayProvider(PaymentProvider):
         rc = params.get("RC")
         dv = params.get("DV")
         uid = params.get("UID")
+        p_amt = params.get("P_AMT", "0")
         
-        # Verify Signature?
-        # DV = HMAC(PID,MD,PRN,AMT,CRN,DT,R1,R2,RU) - wait, callback signature?
-        # Usually callback verification is doing a server-to-server check using the PRN.
-        # But for redirect return, we check PS=Yes/Success?
-        # FonePay usually returns "PS=Yes" or similar.
-        
-        # Ideally we call the Verification API here to be sure.
-        # GET /api/merchantRequest/verification?PRN=...&PID=...&BID=...&UID=...&DV=...
-        # For this implementation, we will trust the callback params + verification call.
-        
-        # Note: Implementing the verification call is safer.
-        
-        success = (ps == "Yes" or ps == "YES") and (rc == "0" or rc == "Success")
+        # Call FonePay Verification API for secure confirmation
+        try:
+            import requests
+            verify_params = {
+                "PRN": prn,
+                "PID": pid,
+                "UID": uid,
+                "DV": dv
+            }
+            response = requests.get(self.verify_url, params=verify_params, timeout=5)
+            response.raise_for_status()
+            verify_data = response.json()
+            
+            # Check verification response
+            success = verify_data.get("PS") == "Yes" or verify_data.get("RS") == "Success"
+            amount = float(p_amt) if p_amt else 0.0
+            
+        except Exception as e:
+            # Fallback: At least verify callback params
+            success = (ps == "Yes" or ps == "YES") and (rc == "0" or rc == "Success")
+            amount = float(p_amt) if p_amt else 0.0
         
         return VerifyResponse(
             success=success,
             transaction_id=uid or "",
-            amount=0.0, # Callback might not have it, need verification API
+            amount=amount,
             status=ps or "Unknown",
             gateway_ref=prn,
             raw_response=params

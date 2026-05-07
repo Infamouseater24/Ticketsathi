@@ -15,7 +15,7 @@ from .models import Movie, Cinema, Screen, Showtime, Seat, Booking, SeatBooking,
 from .forms import SignUpForm, LoginForm
 
 # Payment SDK Imports
-from .payments import PaymentRequest, VerifyRequest, EsewaProvider, KhaltiProvider, FonepayProvider
+from .payments import PaymentRequest, VerifyRequest, EsewaProvider
 import json
 import logging
 
@@ -30,23 +30,8 @@ esewa_provider = EsewaProvider(
     sandbox=os.environ.get('ESEWA_SANDBOX', 'True') == 'True'
 )
 
-# Placeholder for Khalti
-khalti_provider = KhaltiProvider(
-    secret_key=os.environ['KHALTI_SECRET_KEY'],
-    website_url=os.environ.get('KHALTI_WEBSITE_URL', "http://localhost:8000"),
-    sandbox=os.environ.get('KHALTI_SANDBOX', 'True') == 'True'
-)
-
-fonepay_provider = FonepayProvider(
-    merchant_code=os.environ.get('FONEPAY_MERCHANT_CODE', "NBQM"),
-    secret_key=os.environ['FONEPAY_SECRET_KEY'],
-    sandbox=os.environ.get('FONEPAY_SANDBOX', 'True') == 'True'
-)
-
 PROVIDERS = {
     'esewa': esewa_provider,
-    'khalti': khalti_provider,
-    'fonepay': fonepay_provider,
 }
 
 def generate_booking_reference():
@@ -89,23 +74,29 @@ def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data['email']
+            username_or_email = form.cleaned_data['username_or_email']
             password = form.cleaned_data['password']
             
-            try:
-                user_obj = User.objects.get(email=email)
-                user = authenticate(request, username=user_obj.username, password=password)
-                
-                if user is not None:
-                    login(request, user)
-                    messages.success(request, 'Logged in successfully!')
-                    next_url = request.GET.get('next', 'home')
-                    return redirect(next_url)
-                else:
-                    messages.error(request, 'Invalid password!')
-                    return render(request, 'booking/login.html', {'form': form})
-            except User.DoesNotExist:
-                messages.error(request, 'Email not found!')
+            user = None
+            
+            # Try to authenticate with username first
+            user = authenticate(request, username=username_or_email, password=password)
+            
+            # If username didn't work, try email
+            if user is None:
+                try:
+                    user_obj = User.objects.get(email=username_or_email)
+                    user = authenticate(request, username=user_obj.username, password=password)
+                except User.DoesNotExist:
+                    pass
+            
+            if user is not None:
+                login(request, user)
+                messages.success(request, 'Logged in successfully!')
+                next_url = request.GET.get('next', 'home')
+                return redirect(next_url)
+            else:
+                messages.error(request, 'Invalid username/email or password!')
                 return render(request, 'booking/login.html', {'form': form})
     
     if form is None:
@@ -252,7 +243,7 @@ def process_payment(request, booking_id):
         payment_method = request.POST.get('payment_method')
         
         # Validate payment method
-        if payment_method not in ['card', 'esewa', 'khalti', 'fonepay']:
+        if payment_method not in ['card', 'esewa']:
             messages.error(request, 'Invalid payment method!')
             return redirect('payment_page', booking_id=booking.id)
         
@@ -292,11 +283,6 @@ def process_payment(request, booking_id):
              messages.error(request, 'Payment provider not configured.')
              return redirect('payment_page', booking_id=booking.id)
 
-        # Generate Callback URL
-        # For localhost testing, we might need a workaround if providers can't reach localhost.
-        # But for redirect based (eSewa, Fonepay), localhost works for the browser redirect.
-        # For server-to-server (Khalti), it might be tricky but Khalti Initiate API just takes a return_url for user redirection.
-        
         from django.urls import reverse
         callback_url = request.build_absolute_uri(reverse('payment_callback', kwargs={'provider_id': payment_method}))
         
@@ -403,69 +389,61 @@ def payment_callback(request, provider_id):
         result = provider.verify_payment(verify_req)
         
         if result.success:
-            # Now we have the gateway_ref / transaction_id (which might be our order_id)
-            # eSewa: gateway_ref = transaction_uuid = "ORDER-123-uuid"
-            # Fonepay: gateway_ref = "ORDER-123"
-            
-            # Find Booking
-            # Try to match booking_reference in the ID
+            # Find Booking using payment records first
+            # The safest approach: look up by transaction_id that we stored in Payment model
+            booking = None
             try:
-                # We need to lookup by transaction_id if possible, or scan bookings.
-                # But safer: We generated the ID using booking_reference.
-                # eSewa: "REF-UUID"
-                # FonePay: "REF"
-                # Khalti: "REF" (purchase_order_id) - wait, Khalti verify returns pidx/transaction_id.
-                # Does it return purchase_order_id? Yes in `raw_response`.
-                
+                payment = Payment.objects.get(transaction_id=result.transaction_id)
+                booking = payment.booking
+            except Payment.DoesNotExist:
+                # Fallback: Extract booking ref from provider response
                 booking_ref = ""
                 if provider_id == 'esewa':
-                    # Extract from "REF-UUID"
-                     parts = result.gateway_ref.split('-')
-                     # Assuming booking ref doesn't have dashes... checking logic.
-                     # `generate_booking_reference` is random uppercase+digits. Safe.
-                     # But `uuid.hex[:6]` is appended. 
-                     # So it is "REF-HEX".
-                     booking_ref = result.gateway_ref.rsplit('-', 1)[0]
+                    # Extract from "REF-UUID" (rsplit to get first part)
+                    booking_ref = result.gateway_ref.rsplit('-', 1)[0] if result.gateway_ref else ""
                 elif provider_id == 'khalti':
-                    booking_ref = result.raw_response.get("purchase_order_id")
+                    booking_ref = result.raw_response.get("purchase_order_id", "")
                 elif provider_id == 'fonepay':
                     booking_ref = result.gateway_ref
                 
-                booking = Booking.objects.get(booking_reference=booking_ref)
+                if not booking_ref:
+                    logger.error(f"Unable to extract booking reference from provider {provider_id}")
+                    return HttpResponse("Unable to verify booking", status=400)
                 
-                # Check Amount
-                if float(booking.total_amount) != result.amount:
-                    logger.warning(f"Amount mismatch! Expected: {booking.total_amount}, Got: {result.amount}")
-                    messages.error(request, "Payment amount mismatch.")
-                    return redirect('home')
+                try:
+                    booking = Booking.objects.get(booking_reference=booking_ref)
+                except Booking.DoesNotExist:
+                    logger.error(f"Booking not found for ref: {booking_ref}")
+                    return HttpResponse("Booking not found", status=404)
+            
+            if not booking:
+                return HttpResponse("Booking not found", status=404)
+            
+            # Check Amount (with tolerance for float precision)
+            amount_diff = abs(float(booking.total_amount) - float(result.amount))
+            if amount_diff > 0.01:  # Allow 0.01 difference for rounding
+                logger.warning(f"Amount mismatch! Expected: {booking.total_amount}, Got: {result.amount}")
+                messages.error(request, "Payment amount mismatch.")
+                return redirect('home')
 
-                # Update Payment & Booking
-                # Find the payment record (we created it in initiate)
-                # It might have a different transaction_id (random one we made).
-                # We update it.
-                
-                # If payment record exists for this booking
-                Payment.objects.update_or_create(
-                     booking=booking,
-                     defaults={
-                         'status': 'completed',
-                         'transaction_id': result.transaction_id, # Provider's ID
-                         'gateway_ref': result.gateway_ref,
-                         'raw_response': result.raw_response,
-                         'payment_method': provider_id,
-                         'amount': booking.total_amount
-                     }
-                )
-                
-                booking.status = 'Confirmed'
-                booking.save()
-                
-                messages.success(request, f"Payment successful via {provider_id.title()}!")
-                return redirect('booking_confirmation', booking_id=booking.id)
-                
-            except Booking.DoesNotExist:
-                 logger.error(f"Booking not found for ref: {booking_ref}")
-                 return HttpResponse("Booking not found", status=404)
+            # Update Payment & Booking
+            Payment.objects.update_or_create(
+                 booking=booking,
+                 defaults={
+                     'status': 'completed',
+                     'transaction_id': result.transaction_id, # Provider's ID
+                     'gateway_ref': result.gateway_ref,
+                     'raw_response': result.raw_response,
+                     'payment_method': provider_id,
+                     'amount': booking.total_amount
+                 }
+            )
+            
+            booking.status = 'Confirmed'
+            booking.save()
+            
+            messages.success(request, f"Payment successful via {provider_id.title()}!")
+            return redirect('booking_confirmation', booking_id=booking.id)
         else:
             messages.error(request, f"Payment failed: {result.status}")
             return redirect('home')
