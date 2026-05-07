@@ -1,0 +1,43 @@
+@startuml bank_withdrawal_usecase
+title Use Case Diagram: Bank Teller Withdrawal
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Customer" as customer
+actor "Bank Teller" as teller
+actor "Supervisor" as supervisor
+actor "Core Banking System" as system <<System>>
+
+rectangle "Bank Branch Operations" {
+  usecase "Withdraw Money" as UC_Withdraw
+  usecase "Verify Customer Identity" as UC_Verify
+  usecase "Check Account Balance" as UC_Check
+  usecase "Update Account Ledger" as UC_Update
+  
+  usecase "Approve Large Withdrawal" as UC_Approve
+}
+
+' Primary Interactions
+customer --> UC_Withdraw
+teller --> UC_Withdraw
+
+' Include Relationships (Mandatory steps for withdrawal)
+UC_Withdraw ..> UC_Verify : <<include>>
+UC_Withdraw ..> UC_Check : <<include>>
+UC_Withdraw ..> UC_Update : <<include>>
+
+' Extend Relationship (Optional conditional step for large amounts)
+UC_Approve .left.> UC_Withdraw : <<extend>>
+
+' Teller specifically handles the verification and balance checks
+teller --> UC_Verify
+teller --> UC_Check
+
+' Supervisor handles upper-level approvals
+supervisor --> UC_Approve
+
+' The core banking system handles the ledger update
+UC_Update --> system
+
+@enduml

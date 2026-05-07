@@ -1,0 +1,151 @@
+@startuml ticket_booking_class_diagram
+title Class Diagram: Ticket Booking System
+
+skinparam linetype ortho
+skinparam nodesep 90
+skinparam ranksep 90
+skinparam padding 5
+skinparam classAttributeIconSize 0
+
+  class User {
+    + id: Integer
+    + username: String
+    + email: String
+    + password: String <<hashed>>
+    + first_name: String
+    + last_name: String
+    + is_active: Boolean
+    + is_staff: Boolean
+    + is_superuser: Boolean
+  }
+
+  class Admin <<Proxy/Superuser>> {
+    + manage_movies()
+    + manage_cinemas()
+    + manage_showtimes()
+    + review_cancellations()
+    + process_refund()
+  }
+
+  User <|-- Admin : extends (Django proxy)
+
+  class Cinema {
+    + id: Integer
+    + name: String
+    + location: String
+    + address: Text
+    + phone: String
+  }
+
+  class Screen {
+    + id: Integer
+    + name: String
+    + total_seats: Integer
+  }
+
+  class Seat {
+    + id: Integer
+    + row: String
+    + number: Integer
+    + seat_type: String [Regular, Premium, VIP]
+  }
+
+  class Movie {
+    + id: Integer
+    + title: String
+    + description: Text
+    + duration: Integer
+    + genre: String
+    + language: String
+    + rating: String
+    + release_date: Date
+    + poster: ImageField
+    + banner: ImageField
+    + trailer_url: URL
+    + is_now_showing: Boolean
+    + get_trailer_id(): String
+  }
+
+  class MovieImage {
+    + id: Integer
+    + image: ImageField
+    + caption: String
+  }
+
+  class Showtime {
+    + id: Integer
+    + start_time: DateTime
+    + end_time: DateTime
+    + price: Decimal
+    + get_available_seats(): List
+  }
+
+  class Booking {
+    + id: Integer
+    + booking_date: DateTime
+    + total_amount: Decimal
+    + status: String [Pending, Confirmed, Cancelled]
+    + booking_reference: String <<unique>>
+    + can_request_cancellation(): Boolean
+  }
+
+  class SeatBooking {
+    + id: Integer
+    + is_booked: Boolean
+  }
+
+  class Payment {
+    + id: Integer
+    + payment_method: String
+    + amount: Decimal
+    + transaction_id: String <<unique>>
+    + payment_date: DateTime
+    + status: String [pending, completed, failed, refunded]
+    + card_number: String <<max 4>>
+    + cardholder_name: String
+    + refund_date: DateTime
+    + refund_amount: Decimal
+    + gateway_ref: String
+    + raw_response: JSON
+  }
+
+  class CancellationRequest {
+    + id: Integer
+    + reason: Text
+    + request_date: DateTime
+    + status: String [Pending, Approved, Rejected]
+    + admin_response: Text
+    + reviewed_by: Integer <<FK to User>>
+    + review_date: DateTime
+    + refund_amount: Decimal
+    + refund_processed: Boolean
+  }
+
+' ── Cinema & Screen structure ──────────────────────────
+Cinema "1" *-- "many" Screen : contains >
+Screen "1" *-- "many" Seat : has >
+
+' ── Movie structure ────────────────────────────────────
+Movie "1" *-- "many" MovieImage : has >
+
+' ── Showtime scheduling ────────────────────────────────
+Movie "1" o-- "many" Showtime : scheduled in >
+Screen "1" o-- "many" Showtime : hosts >
+
+' ── Seat availability per showtime ────────────────────
+Showtime "1" *-- "many" SeatBooking : tracks availability >
+Seat "1" -- "many" SeatBooking : referenced by >
+
+' ── Booking core ───────────────────────────────────────
+User "1" *-- "many" Booking : makes >
+Showtime "1" o-- "many" Booking : for >
+Booking "1" *-- "many" SeatBooking : consists of >
+
+' ── Payment ────────────────────────────────────────────
+Booking "1" o-- "1" Payment : paid via >
+
+' ── Cancellation ───────────────────────────────────────
+Booking "1" o-- "0..1" CancellationRequest : may have >
+Admin "1" -- "many" CancellationRequest : reviews >
+
+@enduml

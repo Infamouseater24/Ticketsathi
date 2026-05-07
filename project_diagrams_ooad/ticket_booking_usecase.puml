@@ -1,0 +1,59 @@
+@startuml ticket_booking_usecase
+title Use Case Diagram: Ticketsathi Booking System
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Guest User" as guest
+actor "Registered User" as user
+actor "Administrator" as admin
+
+user -|> guest
+
+rectangle "Ticket Booking Core System" {
+  usecase "Browse Movies & Cinemas" as UC_Browse
+  usecase "View Showtimes" as UC_Showtimes
+  usecase "Register/Login" as UC_Login
+  
+  usecase "Select Seats" as UC_Seats
+  usecase "Make Payment" as UC_Pay
+  usecase "Cancel Booking" as UC_Cancel
+  usecase "View Booking History" as UC_History
+  
+  usecase "Manage Movies" as UC_ManageMovies
+  usecase "Manage Cinemas & Screens" as UC_ManageCinemas
+  usecase "Schedule Showtimes" as UC_Schedule
+  usecase "Review Cancellations" as UC_ReviewCancel
+  
+  usecase "Download E-Ticket" as UC_Download
+  usecase "Process Refund" as UC_Refund
+}
+
+' Guest actions
+guest --> UC_Browse
+guest --> UC_Showtimes
+guest --> UC_Login
+
+' Registered User actions (inherits Guest actions)
+user --> UC_Seats
+user --> UC_Pay
+user --> UC_Cancel
+user --> UC_History
+
+' Includes/Extends relationships
+UC_Seats ..> UC_Login : <<includes>>
+UC_Pay ..> UC_Seats : <<includes>>
+UC_Download .right.> UC_History : <<extend>>
+UC_Refund .right.> UC_ReviewCancel : <<extend>>
+
+' Payment API actions
+actor "Payment Gateway" as pg
+UC_Pay <-- pg
+
+' Admin actions
+admin --> UC_ManageMovies
+admin --> UC_ManageCinemas
+admin --> UC_Schedule
+admin --> UC_ReviewCancel
+
+@enduml

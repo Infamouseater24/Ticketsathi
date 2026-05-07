@@ -1,0 +1,44 @@
+@startuml bank_withdrawal_sequence
+title Sequence Diagram: Bank Teller Withdrawal
+
+' Set styling options
+skinparam maxMessageSize 150
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor Customer as C
+participant "Bank Teller" as T
+participant "Supervisor" as S
+database "Core Banking System" as DB
+
+C -> T : 1. Requests withdrawal & presents ID/Card
+activate T
+
+T -> T : 2. Swipes card / Preps transaction
+
+T -> DB : 3. Requests account details & balance
+activate DB
+DB --> T : 4. Returns account info
+deactivate DB
+
+T -> T : 5. Verifies identity matches account
+
+alt Amount > $10,000 (Requires Supervisor)
+    T -> S : 6a. Requests override for large withdrawal
+    activate S
+    S -> S : 7a. Reviews account history & ID
+    S --> T : 8a. Enters credentials to approve
+    deactivate S
+else Standard Amount
+    T -> T : 6b. Proceeds normally
+end
+
+T -> DB : 9. Updates ledger / Deducts funds
+activate DB
+DB --> T : 10. Confirms transaction success
+deactivate DB
+
+T -> C : 11. Dispenses cash and hands over receipt
+deactivate T
+
+@enduml

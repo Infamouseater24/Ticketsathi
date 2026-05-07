@@ -1,0 +1,82 @@
+@startuml ticket_booking_package
+title Package Diagram: Ticketsathi Django Apps
+
+package "Django Core Interface" {
+  package "booking" as b_app {
+    package "views"
+    package "models"
+    package "templates"
+    package "urls"
+  }
+}
+
+package "Payment Infrastucture" as payments {
+  package "esewa_integration"
+  package "khalti_integration"
+  package "fonepay_integration"
+}
+
+package "Admin & Management" as admin {
+  package "django.contrib.admin"
+}
+
+package "User Authentication" as auth {
+  package "django.contrib.auth"
+  package "session_management"
+}
+
+' Dependencies
+b_app ..> payments : uses
+b_app ..> auth : strictly depends on
+admin ..> b_app : manages data
+admin ..> auth : depends on <<superuser>>
+
+note top of views
+  Contains core logic for
+  rendering pages
+end note
+
+note top of models
+  Defines the database 
+  schema and relationships
+end note
+
+note top of templates
+  Stores the HTML user
+  interface files
+end note
+
+note top of urls
+  Maps browser endpoints
+  to backend views
+end note
+
+note top of esewa_integration
+  Processes eSewa
+  wallet payments
+end note
+
+note top of khalti_integration
+  Processes Khalti
+  wallet payments
+end note
+
+note top of fonepay_integration
+  Processes FonePay
+  QR payments
+end note
+
+note top of "django.contrib.admin"
+  Django's built-in backend
+  for managing site data
+end note
+
+note top of "django.contrib.auth"
+  Validates user credentials
+end note
+
+note right of session_management
+  Tracks logged in users
+end note
+
+@enduml

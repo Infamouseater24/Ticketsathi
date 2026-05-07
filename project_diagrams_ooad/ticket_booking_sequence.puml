@@ -1,0 +1,43 @@
+@startuml ticket_booking_sequence
+title Sequence Diagram
+
+actor User
+participant "WebApp" as app
+participant "BookingEngine" as engine
+participant "PaymentAPI" as api
+participant "Database" as db
+
+User -> app: (1) Select Movie & Seats
+activate app
+
+app -> engine: (2) Request Reservation
+activate engine
+
+engine -> db: (3) Lock Seats
+activate db
+db --> engine: (4) Return Success
+deactivate db
+
+engine --> app: (5) Return Pending Booking
+deactivate engine
+
+app -> api: (6) Initialize Payment
+activate api
+api --> app: (7) Payment Confirmation
+deactivate api
+
+app -> engine: (8) Confirm Booking
+activate engine
+
+engine -> db: (9) Update Booking Status
+activate db
+db --> engine: (10) Saved
+deactivate db
+
+engine --> app: (11) E-Ticket Issued
+deactivate engine
+
+app --> User: (12) Display Ticket
+deactivate app
+
+@enduml

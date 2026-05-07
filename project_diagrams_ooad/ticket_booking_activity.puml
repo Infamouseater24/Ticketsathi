@@ -1,0 +1,109 @@
+@startuml ticket_booking_activity
+title Activity Diagram: Ticket Booking Process of Ticket Sathi WebApp
+
+skinparam ActivityBackgroundColor #f0f8ff
+skinparam ActivityBorderColor #2c3e50
+skinparam ArrowColor #2c3e50
+
+|User|
+start
+:Browse Movies;
+:Select a Movie;
+:View Movie Details & Showtimes;
+
+|System|
+if (User Logged In?) then (No)
+  |User|
+  :Redirect to Login/Signup;
+  :Authenticate;
+  
+  |System|
+  if (Authentication Successful?) then (No)
+    |User|
+    :Display Login Error;
+    :Retry Login;
+    detach
+  else (Yes)
+  endif
+else (Yes)
+endif
+
+|User|
+:Select Date, Cinema & Showtime;
+
+|System|
+:Display Seat Map for Showtime;
+
+|User|
+:Select Available Seats;
+:Click "Book Seats";
+
+|System|
+:Temporarily Reserve Seats;
+:Calculate Total Amount;
+:Create Pending Booking;
+:Redirect to Payment Page;
+
+|User|
+:Select Payment Provider;
+note right
+  Available options:
+  * eSewa
+  * Khalti
+  * FonePay
+  * Credit/Debit Card
+end note
+:Enter Payment Details & Confirm;
+
+|System|
+:Process Payment Request via Selected Gateway;
+
+if (Payment Successful?) then (Yes)
+  :Update Payment Status → Confirmed;
+  :Update Booking Status → Confirmed;
+  :Permanently Retain Seats;
+  :Generate E-Ticket;
+
+  |User|
+  :View Booking Confirmation & E-Ticket;
+  
+  if (User Requests Cancellation Later?) then (Yes)
+    |System|
+    :Create Cancellation Request;
+    :Update Booking Status → Pending Cancellation;
+
+    |Admin|
+    :Review Cancellation Request;
+    
+    if (Approve Cancellation?) then (Yes)
+      |System|
+      :Process Refund via Original Payment Gateway;
+      :Release Seats;
+      :Update Booking Status → Cancelled;
+
+      |User|
+      :Display Refund & Cancellation Success;
+    else (No)
+      |System|
+      :Update Booking Status → Confirmed;
+
+      |User|
+      :Display Cancellation Rejected Notice;
+    endif
+  else (No)
+    |User|
+    :Attend Movie;
+  endif
+  stop
+
+else (No)
+  |System|
+  :Log Payment Failure;
+
+  |User|
+  :View Payment Failed Message;
+  :Redirect to Home;
+  stop
+endif
+
+@enduml

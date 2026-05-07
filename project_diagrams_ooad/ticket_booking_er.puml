@@ -1,0 +1,152 @@
+@startuml ticket_booking_er
+title Entity-Relationship Diagram: Ticketsathi
+
+' Hide circle for cleaner ERD look
+hide circle
+
+' Define style for entities
+skinparam class {
+    BackgroundColor White
+    ArrowColor #2C3E50
+    BorderColor #2C3E50
+}
+
+' Definition of Entities (Tables)
+entity "User (auth_user)" as user {
+  *id : Integer
+  --
+  *username : String
+  *password : String
+  email : String
+  first_name : String
+  last_name : String
+  is_staff : Boolean
+  is_superuser : Boolean
+}
+
+entity "Cinema" as cinema {
+  *id : Integer
+  --
+  *name : String
+  *location : String
+  *address : Text
+  *phone : String
+}
+
+entity "Screen" as screen {
+  *id : Integer
+  --
+  *name : String
+  *total_seats : Integer
+  *cinema_id : Integer <<FK>>
+}
+
+entity "Seat" as seat {
+  *id : Integer
+  --
+  *row : String
+  *number : Integer
+  *seat_type : String
+  *screen_id : Integer <<FK>>
+}
+
+entity "Movie" as movie {
+  *id : Integer
+  --
+  *title : String
+  *description : Text
+  *duration : Integer
+  *genre : String
+  *language : String
+  *rating : String
+  *release_date : Date
+  poster : Image
+  banner : Image
+  trailer_url : URL
+  *is_now_showing : Boolean
+}
+
+entity "MovieImage" as movie_image {
+  *id : Integer
+  --
+  image : Image
+  caption : String
+  *movie_id : Integer <<FK>>
+}
+
+entity "Showtime" as showtime {
+  *id : Integer
+  --
+  *start_time : DateTime
+  *end_time : DateTime
+  *price : Decimal
+  *movie_id : Integer <<FK>>
+  *screen_id : Integer <<FK>>
+}
+
+entity "Booking" as booking {
+  *id : Integer
+  --
+  *booking_reference : String [UNIQUE]
+  *booking_date : DateTime
+  *total_amount : Decimal
+  *status : String
+  *user_id : Integer <<FK>>
+  *showtime_id : Integer <<FK>>
+}
+
+entity "SeatBooking" as seat_booking {
+  *id : Integer
+  --
+  *is_booked : Boolean
+  *showtime_id : Integer <<FK>>
+  *seat_id : Integer <<FK>>
+  booking_id : Integer <<FK>>
+}
+
+entity "Payment" as payment {
+  *id : Integer
+  --
+  *transaction_id : String [UNIQUE]
+  *payment_method : String
+  *amount : Decimal
+  *payment_date : DateTime
+  *status : String
+  gateway_ref : String
+  raw_response : JSON
+  *booking_id : Integer <<FK>> [OneToOne]
+}
+
+entity "CancellationRequest" as cancellation {
+  *id : Integer
+  --
+  *reason : Text
+  *request_date : DateTime
+  *status : String
+  admin_response : Text
+  refund_amount : Decimal
+  *refund_processed : Boolean
+  reviewed_by_id : Integer <<FK>>
+  *booking_id : Integer <<FK>> [OneToOne]
+}
+
+' Define Relationships
+cinema ||--o{ screen : "has"
+screen ||--o{ seat : "contains"
+movie ||--o{ movie_image : "has gallery"
+
+movie ||--o{ showtime : "featured in"
+screen ||--o{ showtime : "hosts"
+
+user ||--o{ booking : "makes"
+showtime ||--o{ booking : "for"
+
+showtime ||--o{ seat_booking : "tracks status of"
+seat ||--o{ seat_booking : "status instance for"
+booking ||--o{ seat_booking : "includes"
+
+booking ||--|| payment : "requires"
+booking ||--o| cancellation : "may have"
+user ||--o{ cancellation : "reviews (admin)"
+
+@enduml

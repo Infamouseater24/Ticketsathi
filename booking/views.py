@@ -85,6 +85,7 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('home')
     
+    form = None
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -102,9 +103,12 @@ def login_view(request):
                     return redirect(next_url)
                 else:
                     messages.error(request, 'Invalid password!')
+                    return render(request, 'booking/login.html', {'form': form})
             except User.DoesNotExist:
                 messages.error(request, 'Email not found!')
-    else:
+                return render(request, 'booking/login.html', {'form': form})
+    
+    if form is None:
         form = LoginForm()
     
     return render(request, 'booking/login.html', {'form': form})

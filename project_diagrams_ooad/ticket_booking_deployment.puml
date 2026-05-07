@@ -1,0 +1,38 @@
+@startuml ticket_booking_deployment
+title Deployment Diagram: Ticket Booking System
+
+node "Client Device (Mobile/PC)" as client {
+  node "Web Browser" {
+    artifact "Ticketsathi UI (HTML/JS)" as ui
+  }
+}
+
+node "Web Server Layer (Nginx/Apache)" as web_server {
+  artifact "Reverse Proxy"
+}
+
+node "Application Server (Gunicorn/WSGI)" as app_server {
+  component "Django Application" as django {
+    artifact "Booking Module"
+    artifact "Payment Module"
+    artifact "Admin Module"
+  }
+}
+
+node "Database Server" as db_server {
+  database "MySQL Database" as db
+}
+
+cloud "External Services" as cloud {
+  node "Payment Gateways (eSewa/Khalti)" as pg
+  node "Email/SMS Service" as email
+}
+
+' Connections
+client -- web_server : HTTPS
+web_server -- app_server : HTTP (Internal)
+app_server -- db_server : TCP/IP (Port 3306)
+app_server -- pg : REST API (HTTPS)
+app_server -- email : SMTP/API
+
+@enduml

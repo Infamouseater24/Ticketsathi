@@ -1,0 +1,36 @@
+@startuml ticket_booking_interaction_overview
+title Interaction Overview Diagram: Booking Process
+
+start
+
+:User Browses Catalog;
+
+if (Movie selected?) then (yes)
+  :View Movie & Showtimes;
+  
+  if (Showtime selected?) then (yes)
+    :Select Seats;
+    
+    ' Inline Sequence Diagram block
+    partition "Payment Processing Sequence" {
+      :Initialize Payment Request;
+      :Redirect to Gateway;
+      :Process Payment;
+      :Receive Webhook Notification;
+    }
+    
+    if (Payment Successful?) then (yes)
+      :Confirm Booking & Send Ticket;
+    else (no)
+      :Fail Booking & Release Seats;
+    endif
+    
+  else (no)
+    :Return to Movie Catalog;
+  endif
+else (no)
+  :Exit app;
+endif
+
+stop
+@enduml

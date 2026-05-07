@@ -1,0 +1,40 @@
+@startuml ticket_booking_composite_structure
+title Composite Structure Diagram
+
+skinparam nodesep 150
+skinparam ranksep 150
+skinparam padding 15
+skinparam componentStyle uml2
+
+component "TicketsathiWebApp" {
+  component "UserInterface" as ui {
+    portout "UserInputHandler" as ui_out
+    portin "MovieBrowser" as ui_in
+    port "SeatSelector" as ui_seat
+    port "BookingForm" as ui_form
+  }
+
+  component "BookingEngineModule"  as engine {
+    portin "SeatValidator" as engine_in
+    portout "ReservationManager" as engine_out
+  }
+
+  component "PaymentIntegrationModule" as payment {
+    portin "GatewayConnector" as payment_in
+    port "TransactionProcessor" as payment_proc
+  }
+
+  component "AdminModule" as admin {
+    portout "ShowtimeScheduler" as admin_out
+    port "MovieCatalogManager" as admin_cat
+  }
+
+  ui -[hidden]down-> engine
+  engine -[hidden]down-> payment
+
+  ui_out -down-> engine_in : forwards booking params
+  engine_out -down-> payment_in : sends processed data
+  admin_out -right-> engine_in : retrieves cancellations
+  engine_out -up-> ui_in : provides e-tickets
+}
+@enduml

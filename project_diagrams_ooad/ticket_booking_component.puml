@@ -1,0 +1,23 @@
+@startuml ticket_booking_component
+title Component Diagram
+
+rectangle "Ticketsathi WebApp" {
+  [UserInterface]
+  [AuthenticationModule]
+  [MovieCatalogModule]
+  [BookingEngineModule]
+}
+
+[Database]
+[PaymentGatewayService]
+
+[UserInterface] --> [AuthenticationModule] : > uses
+[UserInterface] --> [MovieCatalogModule] : > interacts
+[UserInterface] --> [BookingEngineModule] : > uses
+
+[AuthenticationModule] --> [Database] : > queries
+[MovieCatalogModule] --> [Database] : > queries
+[BookingEngineModule] --> [Database] : > queries
+
+[BookingEngineModule] --> [PaymentGatewayService] : > calls
+@enduml

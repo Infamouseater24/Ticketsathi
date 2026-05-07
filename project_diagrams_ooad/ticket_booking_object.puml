@@ -1,0 +1,40 @@
+@startuml ticket_booking_object
+title Object Diagram
+
+object "u1 : User" as user {
+  id: 42
+  username: "ramkumar"
+}
+
+object "m1 : Movie" as movie {
+  id: 11
+  title: "Inception"
+}
+
+object "s1 : Showtime" as showtime {
+  id: 55
+  date: "2026-05-10 18:00"
+}
+
+object "seat1 : Seat" as seat {
+  row: "G"
+  number: 12
+}
+
+object "bk1 : Booking" as booking {
+  id: 1001
+  status: "Confirmed"
+}
+
+object "pay1 : Payment" as payment {
+  transaction_id: "ES-9988X"
+  amount: 400.00
+}
+
+user --> booking : makes >
+booking --> showtime : for >
+showtime --> movie : plays >
+booking --> seat : reserves >
+booking --> payment : paid via >
+
+@enduml

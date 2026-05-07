@@ -1,0 +1,38 @@
+@startuml ticket_booking_communication_diagram
+title Communication Diagram: Ticket Booking System
+
+' Skin parameters for cleaner layout
+skinparam nodesep 60
+skinparam ranksep 60
+skinparam padding 5
+
+' Define Actors and Objects
+actor "User" as user
+participant ":Interface" as ui
+participant ":BookingController" as controller
+participant ":Showtime" as showtime
+participant ":Seat" as seat
+participant ":Booking" as booking
+participant ":PaymentGateway" as payment
+
+' Communication Steps (represented via Sequence)
+autonumber
+user -> ui : Select showtime & seats
+ui -> controller : requestBooking()
+
+controller -> showtime : checkAvailability()
+showtime -> seat : getStatus()
+
+controller -> booking : createPendingBooking()
+booking --> controller : return bookingId
+
+controller -> payment : processPayment()
+payment --> controller : return paymentStatus
+
+controller -> booking : updateBookingStatus()
+booking -> seat : lockSeats()
+
+controller -> ui : displayConfirmation()
+ui --> user : show success & ticket
+
+@enduml

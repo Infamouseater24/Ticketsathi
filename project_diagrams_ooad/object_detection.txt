@@ -1,0 +1,96 @@
+System overview
+Ticket Sathi aims to improve the experience of users of different theatres in Pokhara valley by
+making the current process of booking a movie ticket more user-friendly, secure, convenient and
+best of all online. On the landing page users will see the details of the currently running movies
+such as their posters, rating (PG, AD, etc), runtime, date and time of showing, etc. When the user
+clicks on any movie running in any theatre, the layout / seat arrangement of that cinema hall in
+which the movie will be shown inside the theatre will be seen. Seats which are available will be
+shown using green color and those which are not will be shown using red color. When a user
+selects any seat or multiple seats total price will be shown along with a purchase button. When
+the user clicks on the purchase button, verified logged in users will be shown online payment
+options while unverified users will be shown sign in and sign up pages and payment options only
+after verification.When the verified user chooses any of the payment options and completes the
+payment, an electronic ticket will be generated. The electronic ticket will contain an unique
+booking ID, movie time and date for showing seat number and a QRcode. Upon the designated
+time, a staff member from the theatre will verify the ticket using a QR scanner. The staff will
+reject invalid tickets and accept users with valid tickets. Website admin will handle movie
+scheduling , seat management and ticket cancellations.
+
+Candidate objects are listed as:
+Ticket Sathi
+Experience
+Theatres
+Pokhara Valley
+Process
+Booking
+Movie ticket
+Landing page
+Movies
+User
+Posters
+
+Rating
+Runtime
+Date
+Time
+Showing
+Seat arrangement
+Cinema hall
+Seat
+Color
+Price
+Purchase button
+
+Payment options
+Sign in
+Sign up
+Verification
+Electronic ticket
+Booking ID
+QRcode
+QR scanner
+Staff
+Logged in users
+Admin
+
+Rejected Candidate Objects and Rejection Criteria
+
+Candidates Objects Rejection Criteria
+Cinema hall, Movie
+ticket,Ticket Sathi,
+Electronic ticket
+
+Duplicates with theatre, booking and systems
+
+Pokhara Valley
+purchase button, QR
+scanner
+
+Irrelevant to the system
+
+Experience Vague
+Process,landing
+page,sign in , sign up,
+verification, Seat
+arrangement, Payment options
+
+General or UI Elements
+
+Poster rating,
+runtime,date,color, price,
+booking id,QR code
+
+Attributes
+
+Logged-in users Roles
+
+Final Objects(after rejection):
+● Theatre
+● Movie
+● Showing
+● User
+● Seat
+● Booking
+● Payment
+● Staff
+● Admin

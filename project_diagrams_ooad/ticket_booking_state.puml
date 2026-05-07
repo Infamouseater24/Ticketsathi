@@ -1,0 +1,53 @@
+@startuml ticket_booking_state
+title State Machine Diagram: Booking Lifecycle
+
+skinparam nodesep 150
+
+
+' Define the states
+state "Pending Payment" as Pending
+state "Booking Confirmed" as Confirmed
+state "Booking Failed" as Failed
+state "Pending Cancellation" as Cancelling
+state "Cancelled & Refunded" as Cancelled
+
+[*] --> Pending : User selects seats & proceeds
+
+Pending --> Confirmed : Payment succeeds
+Pending --> Failed : Payment fails / times out
+Failed --> Pending : User retries payment
+
+Confirmed --> Cancelling : User requests cancellation
+Cancelling --> Cancelled : Admin approves refund
+Cancelling --> Confirmed : Admin rejects cancellation
+
+Confirmed --> [*] : Showtime passes (Completed)
+Cancelled --> [*] : Lifecycle ends
+Failed --> [*] : User abandons process
+
+note right of Pending
+  State when user is redirected 
+  to external Payment Gateway
+end note
+
+note right of Confirmed
+  Ticket is successfully secured 
+  and ready for the Showtime
+end note
+
+note right of Failed
+  Payment was unsuccessful, 
+  seats are released
+end note
+
+note right of Cancelling
+  User has requested a refund, 
+  awaiting admin review
+end note
+
+note right of Cancelled
+  Refund has been processed 
+  and booking is voided
+end note
+
+@enduml

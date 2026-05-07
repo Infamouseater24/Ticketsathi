@@ -1,0 +1,70 @@
+Fully Dressed use case format
+Based on the Ticket Sathi Booking System requirements
+
+Use Case ID: UC1
+Use Case Name: Book Movie Ticket
+Primary Actor: Registered User
+Stakeholders and Interests::
+- Registered User: Wants to easily browse movies, quickly select available seats, and securely pay for a movie ticket without errors. Wants a digital e-ticket as proof of purchase.
+- Theatre Administrator: Wants accurate recording of ticket sales, real-time seat availability updates, and prevention of double-booking to maximize revenue and avoid customer disputes.
+- Payment Gateway (eSewa/Khalti/FonePay): Wants to receive digital authorization requests in the correct format, securely process customer payments, and accurately account for their payables to the system.
+- Staff Member: Wants an easy-to-scan QR code on the e-ticket to quickly verify and admit users at the cinema hall.
+
+Preconditions: 
+User has navigated to the application, clicked on a specific movie showing, and is identified/authenticated (logged in) by the system.
+
+Success Guarantee(Postconditions):
+Seats are successfully reserved and locked. Payment is collected and recorded. Booking status is updated to 'Confirmed'. An electronic ticket containing a unique Booking ID and QR code is generated and presented to the User.
+
+Main Success Scenario (or Basic Flow)::
+1. User arrives at the seat selection screen for a specific movie showtime.
+2. System presents the cinematic layout, displaying available seats (green) and booked seats (red).
+3. User selects one or multiple available seats.
+4. System calculates and presents the total price based on the selected seats.
+5. User clicks the purchase button to proceed.
+6. System prompts User to select a payment method.
+7. User selects a payment method (e.g., eSewa, Khalti, FonePay) and confirms.
+8. System redirects User to the external Payment Gateway for authorization.
+9. User completes payment on the Payment Gateway interface.
+10. Payment Gateway sends a success callback to the System.
+11. System logs the completed payment, updates the booking status to 'Confirmed', and permanently locks the selected seats.
+12. System generates and presents the electronic ticket (e-ticket) with a unique Booking ID and QR code.
+13. User receives the e-ticket and the process concludes.
+
+Extensions (or Alternative Flows)::
+*a. At any time, System network fails:
+To support recovery, ensure users aren't charged for unbooked seats.
+1. User refreshes or logs back in.
+2. System restores state to before the failed transaction.
+
+3a. User selects seats that were just booked by another user (Race Condition):
+1. System signals an error that the selected seats are no longer available.
+2. System refreshes the seat layout.
+3. User selects different available seats.
+
+5a. User is not authenticated:
+1. System redirects User to the Sign In / Sign Up page.
+2. User successfully authenticates.
+3. System returns User to the seat selection or payment screen to continue the flow.
+
+10a. Payment Gateway sends a failure or timeout callback to the System:
+1. System logs the failed payment transaction.
+2. System signals a payment error to the User.
+3. System releases any temporarily held seats back to 'available'.
+4. User may retry payment or abandon the booking.
+
+Special Requirements:
+- Responsive user interface for seat selection that works on both mobile and desktop screens.
+- Generated QR code must be highly legible and scannable by staff devices.
+- Payment Gateway redirection and callback must be secure (HTTPS) and complete within an acceptable timeframe to avoid seat lockouts.
+
+Technology and Data Variations List::
+7a. Payment method variation: User may choose eSewa, Khalti, or FonePay, each requiring different API payloads or redirection URLs.
+12a. E-ticket format: Ticket can be viewed directly on the web app, or downloaded as a PDF/Image for offline viewing.
+
+Frequency of Occurrence::
+High, particularly during new movie releases or weekend showtimes.
+
+Open Issues:
+- What is the exact timeout duration for releasing seats if a user abandons the Payment Gateway screen without completing or failing the transaction?
+- How are partial refunds handled if an admin needs to cancel only one seat out of a multi-seat booking?
