@@ -46,6 +46,4 @@ class PaymentProvider(ABC):
         pass
 
 from .esewa import EsewaProvider
-from .khalti import KhaltiProvider
-from .fonepay import FonepayProvider
 

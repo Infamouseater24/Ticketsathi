@@ -69,39 +69,35 @@ def signup_view(request):
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('home')
-    
-    form = None
+
+    form = LoginForm(request.POST or None)
+
     if request.method == 'POST':
-        form = LoginForm(request.POST)
+
         if form.is_valid():
-            username_or_email = form.cleaned_data['username_or_email']
+            email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            
-            user = None
-            
-            # Try to authenticate with username first
-            user = authenticate(request, username=username_or_email, password=password)
-            
-            # If username didn't work, try email
-            if user is None:
-                try:
-                    user_obj = User.objects.get(email=username_or_email)
-                    user = authenticate(request, username=user_obj.username, password=password)
-                except User.DoesNotExist:
-                    pass
-            
-            if user is not None:
-                login(request, user)
-                messages.success(request, 'Logged in successfully!')
-                next_url = request.GET.get('next', 'home')
-                return redirect(next_url)
-            else:
-                messages.error(request, 'Invalid username/email or password!')
-                return render(request, 'booking/login.html', {'form': form})
-    
-    if form is None:
-        form = LoginForm()
-    
+
+            try:
+                user_obj = User.objects.get(email=email)
+
+                user = authenticate(
+                    request,
+                    username=user_obj.username,
+                    password=password
+                )
+
+                if user is not None:
+                    login(request, user)
+                    messages.success(request, 'Logged in successfully!')
+                    return redirect('home')
+
+                else:
+                    messages.error(request, 'Invalid password')
+
+            except User.DoesNotExist:
+                messages.error(request, 'No account found with this email')
+
     return render(request, 'booking/login.html', {'form': form})
 
 def logout_view(request):
