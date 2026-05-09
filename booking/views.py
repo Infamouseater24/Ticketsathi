@@ -220,8 +220,16 @@ def select_seats(request, showtime_id):
                     messages.error(request, 'One or more selected seats have just been taken. Please choose other seats.')
                     return redirect('select_seats', showtime_id=showtime_id)
 
-                # Create booking
-                total_amount = len(selected_seat_ids) * float(showtime.price)
+                # Calculate tiered total amount
+                total_amount = 0
+                for seat in locked_seats:
+                    price_offset = 0
+                    if seat.seat_type == 'Premium':
+                        price_offset = 100
+                    elif seat.seat_type == 'VIP':
+                        price_offset = 200
+                    total_amount += float(showtime.price) + price_offset
+
                 booking = Booking.objects.create(
                     user=request.user,
                     showtime=showtime,

@@ -55,3 +55,20 @@ class LoginForm(forms.Form):
             'placeholder': 'Enter your password'
         })
     )
+
+class BulkShowtimeForm(forms.Form):
+    from .models import Screen, Movie
+    movie = forms.ModelChoiceField(queryset=Movie.objects.all(), required=True)
+    screen = forms.ModelChoiceField(queryset=Screen.objects.all(), required=True)
+    start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=True)
+    end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=True)
+    show_times = forms.CharField(
+        widget=forms.Textarea(attrs={'placeholder': 'e.g. 10:00, 14:30, 18:00', 'rows': 3}),
+        help_text="Comma-separated times in HH:MM format",
+        required=True
+    )
+    price = forms.DecimalField(max_digits=6, decimal_places=2, initial=300.00)
+
+class BulkSeatForm(forms.Form):
+    rows = forms.IntegerField(min_value=1, initial=10, help_text="Number of rows (A, B, C...)")
+    seats_per_row = forms.IntegerField(min_value=1, initial=10, help_text="Number of seats in each row")

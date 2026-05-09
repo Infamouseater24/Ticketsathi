@@ -1,6 +1,12 @@
 from django.contrib import admin
+from django.db import transaction
 from django.utils import timezone
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponseRedirect
+from django.contrib import messages
 from .models import Cinema, Movie, Screen, Showtime, Seat, Booking, Payment, CancellationRequest, SeatBooking, MovieImage
+from .forms import BulkShowtimeForm, BulkSeatForm
+from datetime import datetime, timedelta
 
 class MovieImageInline(admin.TabularInline):
     model = MovieImage
@@ -18,6 +24,7 @@ class MovieAdmin(admin.ModelAdmin):
         return f"{obj.title} ({obj.release_date.year})"
     title_display.short_description = 'Movie'
 
+
 @admin.register(Cinema)
 class CinemaAdmin(admin.ModelAdmin):
     list_display = ['name', 'location', 'phone']
@@ -26,8 +33,83 @@ class CinemaAdmin(admin.ModelAdmin):
 
 @admin.register(Screen)
 class ScreenAdmin(admin.ModelAdmin):
-    list_display = ['name', 'cinema', 'total_seats']
+    list_display = ['name', 'cinema', 'total_seats', 'generate_seats_link']
     list_filter = ['cinema']
+
+    def generate_seats_link(self, obj):
+        from django.utils.html import format_html
+        return format_html('<a class="button" href="{}/generate-seats/">Generate Seats</a>', obj.id)
+    generate_seats_link.short_description = 'Actions'
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('<int:screen_id>/generate-seats/', self.admin_site.admin_view(self.generate_seats_view), name='booking_screen_generate_seats'),
+        ]
+        return custom_urls + urls
+
+    def generate_seats_view(self, request, screen_id):
+        screen = get_object_or_404(Screen, id=screen_id)
+        if request.method == 'POST':
+            form = BulkSeatForm(request.POST)
+            if form.is_valid():
+                rows_count = form.cleaned_data['rows']
+                seats_per_row = form.cleaned_data['seats_per_row']
+                
+                total_seats = rows_count * seats_per_row
+                vip_count = int(total_seats * 0.05)
+                premium_count = int(total_seats * 0.20)
+                
+                import string
+                seats_to_create = []
+                
+                # We build the list of all seats first
+                all_seat_coords = []
+                for row_idx in range(rows_count):
+                    if row_idx < 26:
+                        row_label = string.ascii_uppercase[row_idx]
+                    else:
+                        row_label = string.ascii_uppercase[(row_idx // 26) - 1] + string.ascii_uppercase[row_idx % 26]
+                    
+                    for num in range(1, seats_per_row + 1):
+                        all_seat_coords.append((row_label, num))
+                
+                # Far from screen means the last rows (e.g. Row J, K, L...)
+                # We reverse the list to start from the back
+                all_seat_coords.reverse()
+                
+                for i, (row_label, num) in enumerate(all_seat_coords):
+                    if i < vip_count:
+                        s_type = 'VIP'
+                    elif i < (vip_count + premium_count):
+                        s_type = 'Premium'
+                    else:
+                        s_type = 'Regular'
+                    
+                    seats_to_create.append(Seat(
+                        screen=screen,
+                        row=row_label,
+                        number=num,
+                        seat_type=s_type
+                    ))
+                
+                with transaction.atomic():
+                    created = Seat.objects.bulk_create(seats_to_create, ignore_conflicts=True)
+                
+                self.message_user(request, f"Generated {len(created)} seats. (75% Regular, 20% Premium, 5% VIP from the back)")
+                return HttpResponseRedirect("../../../") # Back to screen list
+        else:
+            form = BulkSeatForm()
+
+        context = self.admin_site.each_context(request)
+        context.update({
+            'title': f'Generate Seats for {screen.name}',
+            'form': form,
+            'screen': screen,
+            'opts': self.model._meta,
+        })
+        return render(request, 'admin/bulk_add_showtimes.html', context) # Reusing the same template structure
 
 @admin.register(Showtime)
 class ShowtimeAdmin(admin.ModelAdmin):
@@ -35,6 +117,62 @@ class ShowtimeAdmin(admin.ModelAdmin):
     list_filter = ['movie', 'screen__cinema', 'start_time']
     date_hierarchy = 'start_time'
     list_editable = ['price']
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('bulk-add/', self.admin_site.admin_view(self.bulk_add_view), name='booking_showtime_bulk_add'),
+        ]
+        return custom_urls + urls
+
+    def bulk_add_view(self, request):
+        if request.method == 'POST':
+            form = BulkShowtimeForm(request.POST)
+            if form.is_valid():
+                movie = form.cleaned_data['movie']
+                screen = form.cleaned_data['screen']
+                start_date = form.cleaned_data['start_date']
+                end_date = form.cleaned_data['end_date']
+                show_times_str = form.cleaned_data['show_times']
+                price = form.cleaned_data['price']
+
+                show_times = [t.strip() for t in show_times_str.split(',')]
+                
+                total_created = 0
+                days_range = (end_date - start_date).days + 1
+                
+                for day_offset in range(days_range):
+                    current_date = start_date + timedelta(days=day_offset)
+                    for time_str in show_times:
+                        try:
+                            hour, minute = map(int, time_str.split(':'))
+                            start_dt = datetime.combine(current_date, datetime.min.time().replace(hour=hour, minute=minute))
+                            end_dt = start_dt + timedelta(minutes=movie.duration)
+                            
+                            Showtime.objects.create(
+                                movie=movie,
+                                screen=screen,
+                                start_time=start_dt,
+                                end_time=end_dt,
+                                price=price
+                            )
+                            total_created += 1
+                        except Exception as e:
+                            self.message_user(request, f"Error creating showtime at {time_str} on {current_date}: {e}", level=messages.ERROR)
+
+                self.message_user(request, f"Successfully created {total_created} showtimes.")
+                return HttpResponseRedirect("../")
+        else:
+            form = BulkShowtimeForm()
+
+        context = self.admin_site.each_context(request)
+        context.update({
+            'title': 'Bulk Add Showtimes',
+            'form': form,
+            'opts': self.model._meta,
+        })
+        return render(request, 'admin/bulk_add_showtimes.html', context)
 
 @admin.register(Seat)
 class SeatAdmin(admin.ModelAdmin):
