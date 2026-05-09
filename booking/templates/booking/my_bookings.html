@@ -184,9 +184,17 @@
                                     <div class="col-md-3 text-end">
                                         <div class="mb-2 fw-bold text-primary">Rs. {{ booking.total_amount }}</div>
                                         <div class="d-grid gap-2">
-                                            <a href="{% url 'booking_confirmation' booking.id %}" class="btn btn-sm btn-outline-light rounded-pill">View Ticket</a>
                                             {% if booking.status == 'Confirmed' %}
-                                                <button class="btn btn-sm btn-outline-danger rounded-pill" disabled title="Cancellation unavailable in demo">Cancel</button>
+                                                <a href="{% url 'booking_confirmation' booking.id %}" class="btn btn-sm btn-outline-light rounded-pill">View Ticket</a>
+                                                <a href="{% url 'request_cancellation' booking.id %}" class="btn btn-sm btn-outline-danger rounded-pill">Cancel</a>
+                                            {% elif booking.status == 'Cancelled' %}
+                                                <span class="badge bg-danger mb-2">Cancelled</span>
+                                                {% if booking.cancellation_request and booking.cancellation_request.refund_processed %}
+                                                    <div class="alert alert-success p-2 small mb-0">
+                                                        Refunded: Rs. {{ booking.cancellation_request.refund_amount }}<br>
+                                                        on {{ booking.cancellation_request.review_date|date:"M d, Y H:i" }}
+                                                    </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>

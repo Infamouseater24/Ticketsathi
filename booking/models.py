@@ -166,24 +166,33 @@ class CancellationRequest(models.Model):
         ('Approved', 'Approved'),
         ('Rejected', 'Rejected'),
     ]
-    
     booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='cancellation_request')
     reason = models.TextField(help_text="Reason for cancellation")
     request_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    
     # Admin response
     admin_response = models.TextField(blank=True, null=True, help_text="Admin's response/notes")
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_cancellations')
     review_date = models.DateTimeField(null=True, blank=True)
-    
     # Refund details
     refund_amount = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     refund_processed = models.BooleanField(default=False)
-    
+
     class Meta:
         ordering = ['-request_date']
-    
+
+    def save(self, *args, **kwargs):
+        # If status is being set to Approved, update booking status to Cancelled
+        if self.pk is not None:
+            old = CancellationRequest.objects.get(pk=self.pk)
+            if old.status != 'Approved' and self.status == 'Approved':
+                self.booking.status = 'Cancelled'
+                self.booking.save()
+        elif self.status == 'Approved':
+            self.booking.status = 'Cancelled'
+            self.booking.save()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Cancellation Request - {self.booking.booking_reference} ({self.status})"
 

@@ -40,6 +40,8 @@
                 </div>
             </div>
 
+                        <form id="cancellationForm" method="post" action="{% url 'cancel_booking' booking.id %}">
+                            {% csrf_token %}
                             <textarea 
                                 class="form-control" 
                                 id="reason" 
@@ -51,28 +53,27 @@
                             <div class="form-text">
                                 <span id="charCount">0</span> / 500 characters (minimum 10 required)
                             </div>
-                        </div>
 
-                        <div class="alert alert-secondary">
-                            <h6><i class="fas fa-clipboard-list"></i> Cancellation Policy</h6>
-                            <ul class="mb-0 small">
-                                <li>Cancellation requests must be submitted at least 2 hours before showtime</li>
-                                <li>Admin approval is required for all cancellations</li>
-                                <li>Refunds will be processed to the original payment method</li>
-                                <li>Processing time: 5-7 business days</li>
-                                <li>Cancellation charges may apply based on timing</li>
-                            </ul>
-                        </div>
+                            <div class="alert alert-secondary mt-3">
+                                <h6><i class="fas fa-clipboard-list"></i> Cancellation Policy</h6>
+                                <ul class="mb-0 small">
+                                    <li>Cancellation requests must be submitted at least 2 hours before showtime</li>
+                                    <li>Admin approval is required for all cancellations</li>
+                                    <li>Refunds will be processed to the original payment method</li>
+                                    <li>Processing time: 5-7 business days</li>
+                                    <li>Cancellation charges may apply based on timing</li>
+                                </ul>
+                            </div>
 
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-danger btn-lg" id="submitBtn">
-                                <i class="fas fa-ban"></i> Submit Cancellation Request
-                            </button>
-                            <a href="{% url 'my_bookings' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to My Bookings
-                            </a>
-                        </div>
-                    </form>
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-danger btn-lg" id="submitBtn" disabled>
+                                    <i class="fas fa-ban"></i> Submit Cancellation Request
+                                </button>
+                                <a href="{% url 'my_bookings' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to My Bookings
+                                </a>
+                            </div>
+                        </form>
                 </div>
             </div>
         </div>

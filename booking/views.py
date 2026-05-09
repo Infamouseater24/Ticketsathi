@@ -527,12 +527,14 @@ def cancel_booking(request, booking_id):
             messages.error(request, 'This booking cannot be cancelled.')
             return redirect('my_bookings')
         
-        # Create cancellation request
+        # Prevent duplicate cancellation request
+        if hasattr(booking, 'cancellation_request'):
+            messages.error(request, 'A cancellation request for this booking already exists.')
+            return redirect('request_cancellation', booking_id=booking.id)
         CancellationRequest.objects.create(
             booking=booking,
             reason=reason
         )
-        
         messages.success(request, 'Cancellation request submitted successfully! Our admin will review it shortly.')
         return redirect('my_bookings')
     
