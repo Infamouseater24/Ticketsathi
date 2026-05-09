@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
+from django.db import transaction
+from django.core.exceptions import ValidationError
 from datetime import datetime, timedelta
 import random
 import string
@@ -168,6 +170,9 @@ def movie_detail(request, movie_id):
 
 @login_required
 def select_seats(request, showtime_id):
+    # Lazy Cleanup: Release any expired bookings before showing the seat map
+    Booking.expire_stale_bookings()
+    
     showtime = get_object_or_404(Showtime, id=showtime_id)
     screen = showtime.screen
     seats = screen.seats.all()
@@ -185,30 +190,64 @@ def select_seats(request, showtime_id):
             messages.error(request, 'Please select at least one seat!')
             return redirect('select_seats', showtime_id=showtime_id)
         
-        # Create booking with Pending status
-        total_amount = len(selected_seat_ids) * float(showtime.price)
-        booking = Booking.objects.create(
-            user=request.user,
-            showtime=showtime,
-            total_amount=total_amount,
-            status='Pending',  # Changed to Pending
-            booking_reference=generate_booking_reference()
-        )
-        
-        # Add seats to booking
-        selected_seats = Seat.objects.filter(id__in=selected_seat_ids)
-        booking.seats.set(selected_seats)
-        
-        # Temporarily reserve seats
-        for seat_id in selected_seat_ids:
-            SeatBooking.objects.update_or_create(
-                showtime=showtime,
-                seat_id=seat_id,
-                defaults={'is_booked': True, 'booking': booking}
-            )
-        
-        # Redirect to payment page
-        return redirect('payment_page', booking_id=booking.id)
+        try:
+            # Sort seat IDs to ensure a deterministic locking order and prevent deadlocks
+            sorted_seat_ids = sorted([int(id) for id in selected_seat_ids])
+            
+            with transaction.atomic():
+                # ISSUE 1 & 2 FIX: Lock actual Seat rows instead of SeatBooking rows.
+                # Since Seat rows are static/pre-existing, select_for_update() will 
+                # reliably block other concurrent attempts to book these specific seats.
+                locked_seats = Seat.objects.select_for_update().filter(
+                    id__in=sorted_seat_ids,
+                    screen=screen
+                )
+                
+                # Verify that all requested seats were found and belong to this screen
+                if locked_seats.count() != len(sorted_seat_ids):
+                    messages.error(request, 'Invalid seat selection.')
+                    return redirect('select_seats', showtime_id=showtime_id)
+
+                # Check if any of these seats are ALREADY booked for this specific showtime.
+                # No select_for_update needed here because the parent Seat rows are locked.
+                already_booked_ids = SeatBooking.objects.filter(
+                    showtime=showtime,
+                    seat_id__in=sorted_seat_ids,
+                    is_booked=True
+                ).values_list('seat_id', flat=True)
+                
+                if already_booked_ids:
+                    messages.error(request, 'One or more selected seats have just been taken. Please choose other seats.')
+                    return redirect('select_seats', showtime_id=showtime_id)
+
+                # Create booking
+                total_amount = len(selected_seat_ids) * float(showtime.price)
+                booking = Booking.objects.create(
+                    user=request.user,
+                    showtime=showtime,
+                    total_amount=total_amount,
+                    status='Pending',
+                    booking_reference=generate_booking_reference()
+                )
+                
+                # Add seats to booking relationship
+                booking.seats.set(locked_seats)
+                
+                # Atomically reserve seats. 
+                # We use get_or_create to handle potential existing but 'unbooked' (is_booked=False) records.
+                for seat in locked_seats:
+                    SeatBooking.objects.update_or_create(
+                        showtime=showtime,
+                        seat=seat,
+                        defaults={'is_booked': True, 'booking': booking}
+                    )
+                
+                return redirect('payment_page', booking_id=booking.id)
+                
+        except Exception as e:
+            logger.error(f"Booking Error: {e}")
+            messages.error(request, 'An error occurred while processing your booking. Please try again.')
+            return redirect('select_seats', showtime_id=showtime_id)
     
     context = {
         'showtime': showtime,
@@ -255,20 +294,47 @@ def process_payment(request, booking_id):
                 messages.error(request, 'Please fill in all card details!')
                 return redirect('payment_page', booking_id=booking.id)
             
-            # Create payment record
-            payment = Payment.objects.create(
-                booking=booking,
-                payment_method=payment_method,
-                amount=booking.total_amount,
-                transaction_id=generate_transaction_id(),
-                status='completed',
-                card_number=card_number[-4:],
-                cardholder_name=cardholder_name
-            )
-            
-            # Update booking status to Confirmed
-            booking.status = 'Confirmed'
-            booking.save()
+            with transaction.atomic():
+                # Lock the booking
+                booking = Booking.objects.select_for_update().get(id=booking_id)
+                
+                if booking.status != 'Pending':
+                    messages.error(request, 'Booking is no longer pending.')
+                    return redirect('home')
+
+                # SIMULATION: If card number starts with '0000', simulate a definitive failure
+                if card_number.startswith('0000'):
+                    # ISSUE 4 FIX: Immediate release
+                    SeatBooking.objects.filter(booking=booking).update(is_booked=False, booking=None)
+                    booking.status = 'Cancelled'
+                    booking.save()
+                    
+                    Payment.objects.create(
+                        booking=booking,
+                        payment_method=payment_method,
+                        amount=booking.total_amount,
+                        transaction_id=generate_transaction_id(),
+                        status='failed',
+                        card_number=card_number[-4:],
+                        cardholder_name=cardholder_name
+                    )
+                    messages.error(request, 'Payment failed. Your seats have been released.')
+                    return redirect('home')
+
+                # Create payment record
+                payment = Payment.objects.create(
+                    booking=booking,
+                    payment_method=payment_method,
+                    amount=booking.total_amount,
+                    transaction_id=generate_transaction_id(),
+                    status='completed',
+                    card_number=card_number[-4:],
+                    cardholder_name=cardholder_name
+                )
+                
+                # Update booking status to Confirmed
+                booking.status = 'Confirmed'
+                booking.save()
             
             messages.success(request, 'Payment successful! Your booking is confirmed.')
             return redirect('booking_confirmation', booking_id=booking.id)
@@ -382,67 +448,94 @@ def payment_callback(request, provider_id):
     )
     
     try:
-        result = provider.verify_payment(verify_req)
-        
-        if result.success:
-            # Find Booking using payment records first
-            # The safest approach: look up by transaction_id that we stored in Payment model
-            booking = None
+        with transaction.atomic():
+            # ISSUE 3 FIX: Acquire lock on Booking immediately. 
+            # This serializes the callback and the cleanup job.
             try:
-                payment = Payment.objects.get(transaction_id=result.transaction_id)
-                booking = payment.booking
-            except Payment.DoesNotExist:
-                # Fallback: Extract booking ref from provider response
-                booking_ref = ""
-                if provider_id == 'esewa':
-                    # Extract from "REF-UUID" (rsplit to get first part)
-                    booking_ref = result.gateway_ref.rsplit('-', 1)[0] if result.gateway_ref else ""
-                elif provider_id == 'khalti':
-                    booking_ref = result.raw_response.get("purchase_order_id", "")
-                elif provider_id == 'fonepay':
-                    booking_ref = result.gateway_ref
+                # We use the generic provider logic to get ID, but we need the Booking first if possible
+                # or find it via transaction_id.
                 
-                if not booking_ref:
-                    logger.error(f"Unable to extract booking reference from provider {provider_id}")
-                    return HttpResponse("Unable to verify booking", status=400)
+                # First, we need to know WHICH booking we are talking about to lock it.
+                # Since EsewaProvider.verify_payment parses the ID, let's call it first 
+                # but without side effects yet.
+                result = provider.verify_payment(verify_req)
                 
+                # Try to find booking to lock it
+                booking = None
                 try:
-                    booking = Booking.objects.get(booking_reference=booking_ref)
-                except Booking.DoesNotExist:
-                    logger.error(f"Booking not found for ref: {booking_ref}")
-                    return HttpResponse("Booking not found", status=404)
-            
-            if not booking:
-                return HttpResponse("Booking not found", status=404)
-            
-            # Check Amount (with tolerance for float precision)
-            amount_diff = abs(float(booking.total_amount) - float(result.amount))
-            if amount_diff > 0.01:  # Allow 0.01 difference for rounding
-                logger.warning(f"Amount mismatch! Expected: {booking.total_amount}, Got: {result.amount}")
-                messages.error(request, "Payment amount mismatch.")
-                return redirect('home')
+                    payment = Payment.objects.select_for_update().get(transaction_id=result.transaction_id)
+                    booking = payment.booking
+                except Payment.DoesNotExist:
+                    booking_ref = ""
+                    if provider_id == 'esewa':
+                        booking_ref = result.gateway_ref.rsplit('-', 1)[0] if result.gateway_ref else ""
+                    elif provider_id == 'khalti':
+                        booking_ref = result.raw_response.get("purchase_order_id", "")
+                    elif provider_id == 'fonepay':
+                        booking_ref = result.gateway_ref
+                    
+                    if booking_ref:
+                        booking = Booking.objects.select_for_update().get(booking_reference=booking_ref)
 
-            # Update Payment & Booking
-            Payment.objects.update_or_create(
-                 booking=booking,
-                 defaults={
-                     'status': 'completed',
-                     'transaction_id': result.transaction_id, # Provider's ID
-                     'gateway_ref': result.gateway_ref,
-                     'raw_response': result.raw_response,
-                     'payment_method': provider_id,
-                     'amount': booking.total_amount
-                 }
-            )
-            
-            booking.status = 'Confirmed'
-            booking.save()
-            
-            messages.success(request, f"Payment successful via {provider_id.title()}!")
-            return redirect('booking_confirmation', booking_id=booking.id)
-        else:
-            messages.error(request, f"Payment failed: {result.status}")
-            return redirect('home')
+                if not booking:
+                    return HttpResponse("Booking not found", status=404)
+
+                if result.success:
+                    # Idempotent State Transition: Only confirm if Pending
+                    if booking.status == 'Pending':
+                        # Update Payment record
+                        Payment.objects.update_or_create(
+                             booking=booking,
+                             defaults={
+                                 'status': 'completed',
+                                 'transaction_id': result.transaction_id,
+                                 'gateway_ref': result.gateway_ref,
+                                 'raw_response': result.raw_response,
+                                 'payment_method': provider_id,
+                                 'amount': booking.total_amount
+                             }
+                        )
+                        
+                        booking.status = 'Confirmed'
+                        booking.save()
+                        messages.success(request, f"Payment successful via {provider_id.title()}!")
+                    elif booking.status == 'Confirmed':
+                        messages.info(request, "Payment already processed.")
+                    else:
+                        # ISSUE 3: Payment succeeded but booking was already Cancelled by cleanup!
+                        # In production, this requires a manual refund flow or "resurrecting" if seats still available.
+                        # For now, we keep it Cancelled and log for admin.
+                        logger.error(f"Payment SUCCESS for CANCELLED booking: {booking.booking_reference}. Manual refund required.")
+                        messages.warning(request, "Payment was successful, but the booking had already expired. Please contact support.")
+
+                    return redirect('booking_confirmation', booking_id=booking.id)
+                else:
+                    # ISSUE 4 FIX: Immediate release on definitive failure
+                    if booking.status == 'Pending':
+                        # Release seats immediately
+                        SeatBooking.objects.filter(booking=booking).update(is_booked=False, booking=None)
+                        booking.status = 'Cancelled'
+                        booking.save()
+                        
+                        Payment.objects.update_or_create(
+                            booking=booking,
+                            defaults={
+                                'status': 'failed',
+                                'transaction_id': result.transaction_id or generate_transaction_id(),
+                                'raw_response': result.raw_response,
+                                'payment_method': provider_id,
+                            }
+                        )
+                        messages.error(request, f"Payment failed: {result.status}. Seats have been released.")
+                    
+                    return redirect('home')
+
+            except Booking.DoesNotExist:
+                return HttpResponse("Booking not found", status=404)
+            except Exception as e:
+                logger.error(f"Transaction Error: {e}")
+                raise e
+
             
     except Exception as e:
         logger.error(f"Callback Error: {e}")

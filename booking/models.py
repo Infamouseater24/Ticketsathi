@@ -103,10 +103,18 @@ class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
     showtime = models.ForeignKey(Showtime, on_delete=models.CASCADE, related_name='bookings')
     seats = models.ManyToManyField(Seat)
-    booking_date = models.DateTimeField(auto_now_add=True)
+    booking_date = models.DateTimeField(auto_now_add=True, db_index=True)
+    expires_at = models.DateTimeField(db_index=True, null=True, blank=True)
     total_amount = models.DecimalField(max_digits=8, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending', db_index=True)
     booking_reference = models.CharField(max_length=20, unique=True)
+
+    def save(self, *args, **kwargs):
+        if not self.id and not self.expires_at:
+            from django.utils import timezone
+            from datetime import timedelta
+            self.expires_at = timezone.now() + timedelta(minutes=15)
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.booking_reference} - {self.user.username}"
@@ -122,6 +130,41 @@ class Booking(models.Model):
         except:
             pass
         return True
+
+    @classmethod
+    def expire_stale_bookings(cls):
+        """
+        Releases seats for bookings that have passed their 'expires_at' time.
+        Uses select_for_update to prevent races with payment callbacks.
+        """
+        from django.utils import timezone
+        from django.db import transaction
+
+        now = timezone.now()
+        # Find bookings that are Pending and expired
+        expired_bookings = cls.objects.filter(
+            status='Pending',
+            expires_at__lt=now
+        )
+        
+        count = 0
+        # Process in a transaction with locking
+        with transaction.atomic():
+            # We lock the bookings to ensure the callback doesn't try to confirm them at the same time
+            # Using .select_for_update() on the queryset
+            locked_bookings = expired_bookings.select_for_update(skip_locked=True)
+            
+            for booking in locked_bookings:
+                # Release the SeatBooking records
+                from .models import SeatBooking
+                SeatBooking.objects.filter(booking=booking).update(is_booked=False, booking=None)
+                
+                # Mark booking as Cancelled
+                booking.status = 'Cancelled'
+                booking.save()
+                count += 1
+        
+        return count
 
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [

@@ -2,41 +2,40 @@
 # Run with: python manage.py release_cancelled_seats
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from booking.models import Booking, SeatBooking
 
 class Command(BaseCommand):
-    help = 'Release seats for cancelled bookings'
+    help = 'Release seats for cancelled or expired pending bookings'
 
     def handle(self, *args, **options):
-        # Find all cancelled bookings
+        # 1. Expire stale pending bookings (using expires_at field)
+        # ISSUE 5 & 6: Production-grade cleanup using explicit timestamps
+        expired_count = Booking.expire_stale_bookings()
+        if expired_count > 0:
+            self.stdout.write(self.style.SUCCESS(f"SUCCESS: Expired {expired_count} stale pending bookings"))
+        
+        # 2. Find all cancelled bookings that still have locked seats
+        # This handles cases where a booking was cancelled but seats weren't released (e.g. crash)
         cancelled_bookings = Booking.objects.filter(status='Cancelled')
         
-        self.stdout.write(f"Found {cancelled_bookings.count()} cancelled bookings")
-        
         total_released = 0
-        for booking in cancelled_bookings:
-            # Get seat IDs from this booking
-            seat_ids = list(booking.seats.values_list('id', flat=True))
-            
-            # Find SeatBooking records that are still marked as booked
-            still_booked = SeatBooking.objects.filter(
-                showtime=booking.showtime,
-                seat_id__in=seat_ids,
-                is_booked=True
-            )
-            
-            if still_booked.exists():
-                self.stdout.write(f"\nBooking: {booking.booking_reference}")
-                self.stdout.write(f"  Showtime: {booking.showtime}")
-                self.stdout.write(f"  Seats still marked as booked: {still_booked.count()}")
+        with transaction.atomic():
+            for booking in cancelled_bookings:
+                # Find SeatBooking records that are still marked as booked for this booking
+                still_booked = SeatBooking.objects.filter(
+                    booking=booking,
+                    is_booked=True
+                )
                 
-                # Release them
-                released = still_booked.update(is_booked=False, booking=None)
-                total_released += released
-                
-                self.stdout.write(self.style.SUCCESS(f"  ✓ Released {released} seats"))
+                if still_booked.exists():
+                    released = still_booked.update(is_booked=False, booking=None)
+                    total_released += released
+                    self.stdout.write(f"Released {released} seats for booking {booking.booking_reference}")
         
         if total_released > 0:
-            self.stdout.write(self.style.SUCCESS(f"\n✅ Total seats released: {total_released}"))
-        else:
-            self.stdout.write(self.style.WARNING("\n⚠️  No seats needed to be released"))
+            self.stdout.write(self.style.SUCCESS(f"SUCCESS: Total additional seats released: {total_released}"))
+        elif expired_count == 0:
+            self.stdout.write(self.style.WARNING("No seats needed to be released"))
+
+
