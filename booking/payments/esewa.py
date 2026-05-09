@@ -77,6 +77,8 @@ class EsewaProvider(PaymentProvider):
             return VerifyResponse(success=False, transaction_id="", amount=0, status="FAILED", raw_response={"error": "Missing data param"})
             
         try:
+            # Fix base64 padding
+            encoded_data = encoded_data + "=" * ((4 - len(encoded_data) % 4) % 4)
             decoded_bytes = base64.b64decode(encoded_data)
             decoded_str = decoded_bytes.decode('utf-8')
             import json
@@ -87,24 +89,18 @@ class EsewaProvider(PaymentProvider):
         # Verify signature
         # Format: "total_amount,transaction_uuid,product_code"
         status = data.get("status")
-        total_amount = data.get("total_amount")
+        total_amount = data.get("total_amount") or data.get("amount") or 0
         transaction_uuid = data.get("transaction_uuid")
         
         # In sandbox, sometimes amount comes as string with commas
         if isinstance(total_amount, str):
             total_amount = total_amount.replace(",", "")
             
-        signature_string = f"{total_amount},{transaction_uuid},{self.product_code}"
-        # Note: eSewa response doesn't include signature for verification in this specific flow (Status Check API is preferred but confusing in docs).
-        # However, for the redirect flow, we trust the decoded data if the status is COMPLETE.
-        # Ideally we validte the signature if provided, but eSewa's v2 flow is weird. 
-        # Actually, let's strictly check status.
-        
         success = status == "COMPLETE"
         
         return VerifyResponse(
             success=success,
-            transaction_id=data.get("ref_id", ""), # eSewa Ref ID
+            transaction_id=data.get("transaction_code", data.get("ref_id", "")), # eSewa Ref ID
             amount=float(total_amount) if total_amount else 0.0,
             status=status,
             gateway_ref=transaction_uuid, # Our generated ID
