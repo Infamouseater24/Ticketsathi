@@ -49,8 +49,6 @@ endif
 note right
   Available options:
   * eSewa
-  * Khalti
-  * FonePay
   * Credit/Debit Card
 end note
 :Enter Payment Details & Confirm;
