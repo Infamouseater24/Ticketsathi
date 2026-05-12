@@ -230,6 +230,18 @@
             </div>
         </div>
         <div class="module-box">
+            <h2>Revenue by Genre</h2>
+            <div class="module-content">
+                {% if genre_earnings %}
+                    <div class="chart-container">
+                        <canvas id="genreChart"></canvas>
+                    </div>
+                {% else %}
+                    <p class="no-data">No booking data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="module-box">
             <h2>Revenue by Cinema</h2>
             <div class="module-content">
                 {% if cinema_earnings %}
@@ -350,11 +362,44 @@
         </div>
     </div>
 
+    <!-- Genre Table -->
+    <div class="module-box">
+        <h2>Revenue by Genre</h2>
+        <div class="module-content">
+            {% if genre_earnings %}
+            <table class="earnings-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Rank</th>
+                        <th>Genre</th>
+                        <th>Bookings</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in genre_earnings %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.booking__showtime__movie__genre }}</td>
+                        <td>{{ item.booking_count }}</td>
+                        <td class="revenue">Rs. {{ item.revenue|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p class="no-data">No genre earnings data available yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
 
     <!-- Data for JavaScript (Linter-Safe Method) -->
     {{ movie_labels|json_script:"movie-labels" }}
     {{ movie_data|json_script:"movie-data" }}
+    {{ genre_labels|json_script:"genre-labels" }}
+    {{ genre_data|json_script:"genre-data" }}
     {{ cinema_labels|json_script:"cinema-labels" }}
     {{ cinema_data|json_script:"cinema-data" }}
     {{ hourly_labels|json_script:"hourly-labels" }}
@@ -371,13 +416,15 @@
             // 1. Fetch data from the DOM (Pure valid JS)
             const movieLabels = getJsonData('movie-labels');
             const movieData = getJsonData('movie-data');
+            const genreLabels = getJsonData('genre-labels');
+            const genreData = getJsonData('genre-data');
             const cinemaLabels = getJsonData('cinema-labels');
             const cinemaData = getJsonData('cinema-data');
             const hourlyLabels = getJsonData('hourly-labels');
             const hourlyData = getJsonData('hourly-data');
 
             // Destroy existing charts
-            ['movieChart', 'cinemaChart', 'hourlyChart'].forEach(id => {
+            ['movieChart', 'genreChart', 'cinemaChart', 'hourlyChart'].forEach(id => {
                 const chart = Chart.getChart(id);
                 if (chart) chart.destroy();
             });
@@ -427,6 +474,29 @@
                         }]
                     },
                     options: chartOptions
+                });
+            }
+
+            // Genre Chart
+            if (genreLabels.length > 0) {
+                const genreOptions = Object.assign({}, chartOptions);
+                genreOptions.plugins = Object.assign({}, chartOptions.plugins, {
+                    legend: { display: true, position: 'bottom', labels: { color: textColor, padding: 16 } }
+                });
+                delete genreOptions.scales;
+
+                new Chart(document.getElementById('genreChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: genreLabels,
+                        datasets: [{
+                            data: genreData,
+                            backgroundColor: CHART_COLORS.slice(5, 5 + genreLabels.length),
+                            borderWidth: 2,
+                            borderColor: bgColor,
+                        }]
+                    },
+                    options: genreOptions
                 });
             }
 

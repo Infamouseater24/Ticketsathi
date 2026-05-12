@@ -4,7 +4,7 @@ title Use Case Diagram: Ticketsathi Booking System
 left to right direction
 skinparam packageStyle rectangle
 skinparam actorStyle awesome
-skinparam linetype polyline
+skinparam linetype ortho
 
 actor "Guest User" as Guest
 actor "Registered User" as User

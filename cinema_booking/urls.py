@@ -8,5 +8,7 @@ urlpatterns = [
     path('', include('booking.urls')),
 ]
 
+handler404 = 'booking.views.custom_404_view'
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

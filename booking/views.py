@@ -654,3 +654,5 @@ def coming_soon(request):
     movies = Movie.objects.filter(is_now_showing=False, release_date__gt=timezone.now()).order_by('release_date')
     return render(request, 'booking/coming_soon.html', {'movies': movies})
 
+def custom_404_view(request, exception):
+    return render(request, '404.html', status=404)

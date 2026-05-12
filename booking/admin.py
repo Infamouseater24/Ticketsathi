@@ -95,6 +95,13 @@ def earnings_dashboard(request):
         booking_count=Count('booking', distinct=True)
     ).order_by('-revenue')
 
+    genre_earnings = payments.values(
+        'booking__showtime__movie__genre'
+    ).annotate(
+        revenue=Sum('amount'),
+        booking_count=Count('booking', distinct=True)
+    ).order_by('-revenue')
+
     # 5. HOURLY PEAK PERFORMANCE (Python-side for DB compatibility)
     # Get revenue by hour of showtime
     hourly_data_raw = payments.values('booking__showtime__start_time__hour').annotate(
@@ -124,10 +131,13 @@ def earnings_dashboard(request):
         'cinema_earnings': list(cinema_earnings),
         'screen_earnings': list(screen_earnings),
         'movie_earnings': list(movie_earnings),
+        'genre_earnings': list(genre_earnings),
         'hourly_labels': hourly_labels,
         'hourly_data': hourly_values,
         'movie_labels': [m['booking__showtime__movie__title'] for m in movie_earnings],
         'movie_data': [float(m['revenue']) for m in movie_earnings],
+        'genre_labels': [g['booking__showtime__movie__genre'] for g in genre_earnings],
+        'genre_data': [float(g['revenue']) for g in genre_earnings],
         'cinema_labels': [c['booking__showtime__screen__cinema__name'] for c in cinema_earnings],
         'cinema_data': [float(c['revenue']) for c in cinema_earnings],
         'is_nav_sidebar_enabled': True,
