@@ -1,0 +1,23 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content_title %}
+    {{ block.super }}
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'admin:earnings_dashboard' %}" class="button" style="background: var(--secondary); color: var(--header-color); padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-flex; align-items: center; font-weight: 600;">
+            View Earnings Dashboard
+        </a>
+    </div>
+{% endblock %}
+
+{% block sidebar %}
+    {{ block.super }}
+    <div class="module">
+        <h2>Analytics</h2>
+        <ul style="padding-left: 0; list-style: none;">
+            <li style="padding: 8px 10px; border-bottom: 1px solid var(--border-color);">
+                <a href="{% url 'admin:earnings_dashboard' %}" style="font-weight: 600;">Earnings Dashboard</a>
+            </li>
+        </ul>
+    </div>
+{% endblock %}

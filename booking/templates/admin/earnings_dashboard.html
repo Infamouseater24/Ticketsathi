@@ -1,0 +1,490 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Earnings Dashboard | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    /* Use Django Admin Native Variables for Theme Support */
+    #content {
+        padding: 20px 40px;
+        background: var(--body-bg);
+        color: var(--body-fg);
+    }
+
+    .dashboard-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Stats Bar updated for 4 items */
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1px;
+        background: var(--border-color);
+        border: 1px solid var(--border-color);
+        margin-bottom: 30px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    /* Date Filter Form */
+    .filter-form {
+        background: var(--darker-bg);
+        padding: 15px 20px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 1px solid var(--border-color);
+    }
+    .filter-form label {
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--body-quiet-color);
+    }
+    .filter-form input[type="date"] {
+        padding: 5px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        background: var(--body-bg);
+        color: var(--body-fg);
+    }
+    .filter-form button {
+        background: var(--secondary);
+        color: var(--header-color);
+        border: none;
+        padding: 6px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .filter-form button:hover {
+        opacity: 0.9;
+    }
+
+    .stat-item {
+        background: var(--body-bg);
+        padding: 20px;
+        text-align: center;
+    }
+    .stat-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--body-quiet-color);
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--secondary);
+    }
+
+    /* Admin Module Style */
+    .module-box {
+        background: var(--body-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        margin-bottom: 30px;
+    }
+    .module-box h2 {
+        background: var(--secondary);
+        color: var(--header-color) !important;
+        padding: 10px 15px;
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 4px 4px 0 0;
+    }
+    .module-content {
+        padding: 20px;
+    }
+
+    /* Table Styling matched to Django Admin */
+    .earnings-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .earnings-table th {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--darker-bg);
+        color: var(--body-quiet-color);
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+    .earnings-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13px;
+        color: var(--body-fg);
+    }
+    .earnings-table tr:nth-child(even) {
+        background: var(--body-bg);
+    }
+    .earnings-table tr:hover {
+        background: var(--darker-bg);
+    }
+    .earnings-table .revenue {
+        font-weight: 600;
+        color: var(--secondary);
+    }
+
+    /* Charts Layout */
+    .charts-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .chart-container {
+        position: relative;
+        height: 320px;
+        width: 100%;
+    }
+
+    .no-data {
+        color: var(--body-quiet-color);
+        text-align: center;
+        padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+        #content { padding: 15px; }
+        .charts-row { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; Earnings & Occupancy
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+    <!-- Filters -->
+    <form class="filter-form" method="GET">
+        <label>From:</label>
+        <input type="date" name="start_date" value="{{ start_date }}">
+        
+        <label>To:</label>
+        <input type="date" name="end_date" value="{{ end_date }}">
+
+        <label>Screen:</label>
+        <select name="screen_id" style="padding: 5px; border-radius: 3px; border: 1px solid var(--border-color); background: var(--body-bg); color: var(--body-fg);">
+            <option value="all">All Screens</option>
+            {% for screen in all_screens %}
+                <option value="{{ screen.id }}" {% if selected_screen == screen.id|stringformat:"i" %}selected{% endif %}>
+                    {{ screen.cinema.name }} - {{ screen.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Filter Results</button>
+        <a href="{% url 'admin:earnings_dashboard' %}" style="font-size: 11px; color: var(--body-quiet-color); margin-left: 10px;">Reset</a>
+    </form>
+
+    <!-- Summary Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-value">Rs. {{ total_revenue|floatformat:2 }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Total Bookings</div>
+            <div class="stat-value">{{ total_bookings }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Tickets Sold</div>
+            <div class="stat-value">{{ total_tickets }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Avg. Occupancy</div>
+            <div class="stat-value">{{ occupancy_rate|floatformat:1 }}%</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+        <div class="module-box">
+            <h2>Revenue by Movie</h2>
+            <div class="module-content">
+                {% if movie_earnings %}
+                    <div class="chart-container">
+                        <canvas id="movieChart"></canvas>
+                    </div>
+                {% else %}
+                    <p class="no-data">No booking data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="module-box">
+            <h2>Revenue by Cinema</h2>
+            <div class="module-content">
+                {% if cinema_earnings %}
+                    <div class="chart-container">
+                        <canvas id="cinemaChart"></canvas>
+                    </div>
+                {% else %}
+                    <p class="no-data">No booking data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Peak Performance Chart -->
+    <div class="module-box">
+        <h2>Peak Performance (Earnings by Time of Day)</h2>
+        <div class="module-content">
+            <div class="chart-container" style="height: 250px;">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cinema Table -->
+    <div class="module-box">
+        <h2>Revenue by Cinema / Hall</h2>
+        <div class="module-content">
+            {% if cinema_earnings %}
+            <table class="earnings-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Rank</th>
+                        <th>Cinema</th>
+                        <th>Location</th>
+                        <th>Bookings</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cinema_earnings %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.booking__showtime__screen__cinema__name }}</td>
+                        <td>{{ item.booking__showtime__screen__cinema__location }}</td>
+                        <td>{{ item.booking_count }}</td>
+                        <td class="revenue">Rs. {{ item.revenue|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p class="no-data">No cinema earnings data available yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Screen Table -->
+    <div class="module-box">
+        <h2>Revenue by Screen</h2>
+        <div class="module-content">
+            {% if screen_earnings %}
+            <table class="earnings-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Rank</th>
+                        <th>Screen</th>
+                        <th>Cinema</th>
+                        <th>Bookings</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in screen_earnings %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.booking__showtime__screen__name }}</td>
+                        <td>{{ item.booking__showtime__screen__cinema__name }}</td>
+                        <td>{{ item.booking_count }}</td>
+                        <td class="revenue">Rs. {{ item.revenue|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p class="no-data">No screen earnings data available yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Movie Table -->
+    <div class="module-box">
+        <h2>Revenue by Movie</h2>
+        <div class="module-content">
+            {% if movie_earnings %}
+            <table class="earnings-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Rank</th>
+                        <th>Movie</th>
+                        <th>Bookings</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in movie_earnings %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.booking__showtime__movie__title }}</td>
+                        <td>{{ item.booking_count }}</td>
+                        <td class="revenue">Rs. {{ item.revenue|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p class="no-data">No movie earnings data available yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+    <!-- Data for JavaScript (Linter-Safe Method) -->
+    {{ movie_labels|json_script:"movie-labels" }}
+    {{ movie_data|json_script:"movie-data" }}
+    {{ cinema_labels|json_script:"cinema-labels" }}
+    {{ cinema_data|json_script:"cinema-data" }}
+    {{ hourly_labels|json_script:"hourly-labels" }}
+    {{ hourly_data|json_script:"hourly-data" }}
+
+    <script>
+        // Helper to safely get JSON data from the DOM
+        function getJsonData(id, defaultVal = []) {
+            const element = document.getElementById(id);
+            return element ? JSON.parse(element.textContent) : defaultVal;
+        }
+
+        function renderCharts() {
+            // 1. Fetch data from the DOM (Pure valid JS)
+            const movieLabels = getJsonData('movie-labels');
+            const movieData = getJsonData('movie-data');
+            const cinemaLabels = getJsonData('cinema-labels');
+            const cinemaData = getJsonData('cinema-data');
+            const hourlyLabels = getJsonData('hourly-labels');
+            const hourlyData = getJsonData('hourly-data');
+
+            // Destroy existing charts
+            ['movieChart', 'cinemaChart', 'hourlyChart'].forEach(id => {
+                const chart = Chart.getChart(id);
+                if (chart) chart.destroy();
+            });
+
+            const rootStyle = getComputedStyle(document.documentElement);
+            const textColor = rootStyle.getPropertyValue('--body-fg').trim() || '#333';
+            const gridColor = rootStyle.getPropertyValue('--border-color').trim() || '#eee';
+            const bgColor = rootStyle.getPropertyValue('--body-bg').trim() || '#fff';
+            const accentColor = rootStyle.getPropertyValue('--secondary').trim() || '#417690';
+
+            const CHART_COLORS = [
+                '#417690', '#79aec8', '#a4c5d4', '#e8eff3', '#2d5366',
+                '#5b8ea8', '#8cb4c5', '#bed8e4', '#1d3542', '#4c7a91'
+            ];
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false, labels: { color: textColor } },
+                    tooltip: { backgroundColor: textColor, titleColor: bgColor, bodyColor: bgColor }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) { return 'Rs. ' + value.toLocaleString(); }
+                        }
+                    },
+                    x: { grid: { display: false }, ticks: { color: textColor } }
+                }
+            };
+
+            // Movie Chart
+            if (movieLabels.length > 0) {
+                new Chart(document.getElementById('movieChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: movieLabels,
+                        datasets: [{
+                            label: 'Revenue (Rs.)',
+                            data: movieData,
+                            backgroundColor: CHART_COLORS.slice(0, movieLabels.length),
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: chartOptions
+                });
+            }
+
+            // Cinema Chart
+            if (cinemaLabels.length > 0) {
+                const cinemaOptions = Object.assign({}, chartOptions);
+                cinemaOptions.plugins = Object.assign({}, chartOptions.plugins, {
+                    legend: { display: true, position: 'bottom', labels: { color: textColor, padding: 16 } }
+                });
+                delete cinemaOptions.scales;
+
+                new Chart(document.getElementById('cinemaChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: cinemaLabels,
+                        datasets: [{
+                            data: cinemaData,
+                            backgroundColor: CHART_COLORS.slice(0, cinemaLabels.length),
+                            borderWidth: 2,
+                            borderColor: bgColor,
+                        }]
+                    },
+                    options: cinemaOptions
+                });
+            }
+
+            // Hourly Chart
+            const hourlyOptions = Object.assign({}, chartOptions);
+            hourlyOptions.scales = Object.assign({}, chartOptions.scales, {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                }
+            });
+
+            new Chart(document.getElementById('hourlyChart'), {
+                type: 'line',
+                data: {
+                    labels: hourlyLabels,
+                    datasets: [{
+                        label: 'Revenue (Rs.)',
+                        data: hourlyData,
+                        borderColor: accentColor,
+                        backgroundColor: accentColor + '20',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                    }]
+                },
+                options: hourlyOptions
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', renderCharts);
+
+        const observer = new MutationObserver(() => {
+            setTimeout(renderCharts, 100);
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+    </script>
+{% endblock %}

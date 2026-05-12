@@ -1,12 +1,152 @@
 from django.contrib import admin
 from django.db import transaction
+from django.db.models import Sum, Count
 from django.utils import timezone
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
+from django.urls import path
 from .models import Cinema, Movie, Screen, Showtime, Seat, Booking, Payment, CancellationRequest, SeatBooking, MovieImage
 from .forms import BulkShowtimeForm, BulkSeatForm
 from datetime import datetime, timedelta
+
+
+# ============================================
+# EARNINGS DASHBOARD VIEW
+# ============================================
+def earnings_dashboard(request):
+    """Custom admin view for revenue tracking and occupancy analytics."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied.")
+
+    # 1. FILTERS (Time & Screen)
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    screen_id = request.GET.get('screen_id')
+    
+    today = timezone.now().date()
+    default_start = today - timedelta(days=30)
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else default_start
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
+    except ValueError:
+        start_date, end_date = default_start, today
+
+    # Base Filter logic
+    date_filter = {
+        'booking__showtime__start_time__date__gte': start_date,
+        'booking__showtime__start_time__date__lte': end_date,
+        'status': 'completed'
+    }
+    booking_filter = {
+        'showtime__start_time__date__gte': start_date,
+        'showtime__start_time__date__lte': end_date,
+        'status': 'Confirmed'
+    }
+    showtime_filter = {
+        'start_time__date__gte': start_date,
+        'start_time__date__lte': end_date
+    }
+
+    if screen_id and screen_id != 'all':
+        date_filter['booking__showtime__screen_id'] = screen_id
+        booking_filter['showtime__screen_id'] = screen_id
+        showtime_filter['screen_id'] = screen_id
+
+    # Querysets
+    payments = Payment.objects.filter(**date_filter)
+    confirmed_bookings = Booking.objects.filter(**booking_filter)
+    showtimes_in_period = Showtime.objects.filter(**showtime_filter)
+
+    # 2. CORE METRICS
+    total_revenue = payments.aggregate(total=Sum('amount'))['total'] or 0
+    total_bookings = confirmed_bookings.count()
+    total_tickets = confirmed_bookings.aggregate(tickets=Count('seats'))['tickets'] or 0
+
+    # 3. OCCUPANCY ANALYTICS
+    total_capacity = sum(st.screen.total_seats for st in showtimes_in_period)
+    occupancy_rate = 0
+    if total_capacity > 0:
+        occupancy_rate = (total_tickets / total_capacity) * 100
+
+    # 4. GROUPED EARNINGS
+    cinema_earnings = payments.values(
+        'booking__showtime__screen__cinema__name',
+        'booking__showtime__screen__cinema__location'
+    ).annotate(
+        revenue=Sum('amount'),
+        booking_count=Count('booking', distinct=True)
+    ).order_by('-revenue')
+
+    screen_earnings = payments.values(
+        'booking__showtime__screen__name',
+        'booking__showtime__screen__cinema__name'
+    ).annotate(
+        revenue=Sum('amount'),
+        booking_count=Count('booking', distinct=True)
+    ).order_by('-revenue')
+
+    movie_earnings = payments.values(
+        'booking__showtime__movie__title'
+    ).annotate(
+        revenue=Sum('amount'),
+        booking_count=Count('booking', distinct=True)
+    ).order_by('-revenue')
+
+    # 5. HOURLY PEAK PERFORMANCE (Python-side for DB compatibility)
+    # Get revenue by hour of showtime
+    hourly_data_raw = payments.values('booking__showtime__start_time__hour').annotate(
+        revenue=Sum('amount')
+    ).order_by('booking__showtime__start_time__hour')
+    
+    hourly_labels = [f"{h:02d}:00" for h in range(24)]
+    hourly_values = [0] * 24
+    for entry in hourly_data_raw:
+        hour = entry['booking__showtime__start_time__hour']
+        if hour is not None:
+            hourly_values[hour] = float(entry['revenue'])
+
+    # For the Filter Dropdown
+    all_screens = Screen.objects.select_related('cinema').all().order_by('cinema__name', 'name')
+
+    context = {
+        'title': 'Earnings & Occupancy Dashboard',
+        'start_date': start_date.strftime('%Y-%m-%d'),
+        'end_date': end_date.strftime('%Y-%m-%d'),
+        'selected_screen': screen_id,
+        'all_screens': all_screens,
+        'total_revenue': total_revenue,
+        'total_bookings': total_bookings,
+        'total_tickets': total_tickets,
+        'occupancy_rate': occupancy_rate,
+        'cinema_earnings': list(cinema_earnings),
+        'screen_earnings': list(screen_earnings),
+        'movie_earnings': list(movie_earnings),
+        'hourly_labels': hourly_labels,
+        'hourly_data': hourly_values,
+        'movie_labels': [m['booking__showtime__movie__title'] for m in movie_earnings],
+        'movie_data': [float(m['revenue']) for m in movie_earnings],
+        'cinema_labels': [c['booking__showtime__screen__cinema__name'] for c in cinema_earnings],
+        'cinema_data': [float(c['revenue']) for c in cinema_earnings],
+        'is_nav_sidebar_enabled': True,
+        'available_apps': admin.site.get_app_list(request),
+        'has_permission': admin.site.has_permission(request),
+    }
+    return render(request, 'admin/earnings_dashboard.html', context)
+
+
+# Register custom admin URL
+original_get_urls = admin.AdminSite.get_urls
+
+def custom_admin_urls(self):
+    custom_urls = [
+        path('earnings/', self.admin_view(earnings_dashboard), name='earnings_dashboard'),
+    ]
+    return custom_urls + original_get_urls(self)
+
+admin.AdminSite.get_urls = custom_admin_urls
 
 class MovieImageInline(admin.TabularInline):
     model = MovieImage
