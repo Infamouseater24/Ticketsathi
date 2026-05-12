@@ -147,12 +147,71 @@ def earnings_dashboard(request):
     return render(request, 'admin/earnings_dashboard.html', context)
 
 
+# ============================================
+# DOWNLOAD ENSIGHT DATA VIEW
+# ============================================
+import csv
+from django.http import HttpResponse
+def download_ensight_data(request):
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied.")
+
+    # Use same filters as dashboard
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    screen_id = request.GET.get('screen_id')
+    today = timezone.now().date()
+    default_start = today - timedelta(days=30)
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else default_start
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
+    except ValueError:
+        start_date, end_date = default_start, today
+
+    date_filter = {
+        'booking__showtime__start_time__date__gte': start_date,
+        'booking__showtime__start_time__date__lte': end_date,
+        'status': 'completed'
+    }
+    if screen_id and screen_id != 'all':
+        date_filter['booking__showtime__screen_id'] = screen_id
+
+    payments = Payment.objects.filter(**date_filter)
+
+    # Prepare CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="ensight_data.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Payment ID', 'Booking Ref', 'Cinema', 'Screen', 'Movie', 'Showtime', 'Amount', 'Status', 'Payment Date'])
+    for p in payments.select_related('booking__showtime__screen__cinema', 'booking__showtime__movie'):
+        booking = p.booking
+        showtime = booking.showtime if hasattr(booking, 'showtime') else None
+        cinema = showtime.screen.cinema.name if showtime and hasattr(showtime.screen, 'cinema') else ''
+        screen = showtime.screen.name if showtime else ''
+        movie = showtime.movie.title if showtime and hasattr(showtime, 'movie') else ''
+        showtime_str = showtime.start_time.strftime('%Y-%m-%d %H:%M') if showtime else ''
+        writer.writerow([
+            p.id,
+            booking.booking_reference if hasattr(booking, 'booking_reference') else '',
+            cinema,
+            screen,
+            movie,
+            showtime_str,
+            p.amount,
+            p.status,
+            p.created_at.strftime('%Y-%m-%d %H:%M') if hasattr(p, 'created_at') else ''
+        ])
+    return response
+
+
 # Register custom admin URL
 original_get_urls = admin.AdminSite.get_urls
 
 def custom_admin_urls(self):
     custom_urls = [
         path('earnings/', self.admin_view(earnings_dashboard), name='earnings_dashboard'),
+        path('download-ensight-data/', self.admin_view(download_ensight_data), name='download_ensight_data'),
     ]
     return custom_urls + original_get_urls(self)
 

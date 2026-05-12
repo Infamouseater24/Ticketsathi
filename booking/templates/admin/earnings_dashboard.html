@@ -173,6 +173,11 @@
 {% block content %}
 <div class="dashboard-wrapper">
 
+    <!-- Print & Download Ensight Data Buttons -->
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;">
+        <button onclick="window.print()" style="background: var(--secondary); color: var(--header-color); border: none; padding: 8px 18px; border-radius: 4px; font-weight: 600; cursor: pointer;">Print Dashboard</button>
+    </div>
+
     <!-- Filters -->
     <form class="filter-form" method="GET">
         <label>From:</label>
